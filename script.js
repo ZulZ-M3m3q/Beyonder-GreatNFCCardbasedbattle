@@ -222,14 +222,16 @@ function initBattle() {
   
   document.getElementById('game-over').classList.add('hidden');
   
-  let turnCount = 0;
+  let currentAttacker = 1;
   battleInterval = setInterval(() => {
-    turnCount++;
-    executeTurn();
+    executeTurn(currentAttacker);
     
     if (player1Character.currentHp <= 0 || player2Character.currentHp <= 0) {
       endBattle();
     }
+    
+    // Alternate turns
+    currentAttacker = currentAttacker === 1 ? 2 : 1;
   }, 2000);
 }
 
@@ -257,8 +259,7 @@ function updateHealth(num, character) {
   }
 }
 
-function executeTurn() {
-  const attacker = Math.random() < 0.5 ? 1 : 2;
+function executeTurn(attacker) {
   const defender = attacker === 1 ? 2 : 1;
   
   const attackerChar = attacker === 1 ? player1Character : player2Character;
@@ -286,8 +287,7 @@ function executeTurn() {
     return;
   }
   
-  const multiplier = Math.floor(Math.random() * 5) + 1;
-  const damage = Math.floor(attackerChar.attack * multiplier);
+  const damage = attackerChar.attack;
   
   defenderChar.currentHp = Math.max(0, defenderChar.currentHp - damage);
   updateHealth(defender, defenderChar);
@@ -297,15 +297,7 @@ function executeTurn() {
   defenderStatus.style.color = '#ff4500';
   setTimeout(() => defenderStatus.textContent = '', 1000);
   
-  let logMessage = `${attackerChar.name} attacks ${defenderChar.name} for ${damage} damage!`;
-  let logClass = 'attack';
-  
-  if (multiplier > 1) {
-    logMessage += ` (${multiplier}x MULTIPLIER!)`;
-    logClass = 'multiplier';
-  }
-  
-  addLog(logMessage, logClass);
+  addLog(`${attackerChar.name} attacks ${defenderChar.name} for ${damage} damage!`, 'attack');
 }
 
 function addLog(message, className = '') {
