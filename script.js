@@ -532,57 +532,152 @@ document.getElementById('upgrade-btn')?.addEventListener('click', async () => {
 });
 
 document.getElementById('back-to-title')?.addEventListener('click', () => {
+  currentUpgradeCharacter = null;
+  document.getElementById('upgrade-scan-status').textContent = '';
+  document.getElementById('scan-for-upgrade-btn').disabled = false;
   showScreen('title');
 });
+
+let currentUpgradeCharacter = null;
+
+document.getElementById('scan-for-upgrade-btn')?.addEventListener('click', async () => {
+  scanForUpgrade();
+});
+
+async function scanForUpgrade() {
+  const statusElement = document.getElementById('upgrade-scan-status');
+  const scanBtn = document.getElementById('scan-for-upgrade-btn');
+  
+  scanBtn.disabled = true;
+  statusElement.textContent = '📡 Scanning for card...';
+  statusElement.style.color = '#ffaa00';
+  
+  if (nfcSupported && 'NDEFReader' in window) {
+    try {
+      const ndef = new NDEFReader();
+      await ndef.scan();
+      
+      const readingHandler = ({ message, serialNumber }) => {
+        console.log(`NFC tag detected for upgrade! Serial: ${serialNumber}`);
+        
+        let characterData = null;
+        
+        for (const record of message.records) {
+          if (record.recordType === "text") {
+            const textDecoder = new TextDecoder(record.encoding);
+            const text = textDecoder.decode(record.data);
+            characterData = parseNFCData(text);
+            break;
+          }
+        }
+        
+        if (!characterData) {
+          const hash = serialNumber.split(':').reduce((acc, val) => acc + parseInt(val, 16), 0);
+          const charIndex = hash % characters.length;
+          characterData = characters[charIndex];
+        }
+        
+        loadCharacterForUpgrade(characterData);
+        ndef.removeEventListener("reading", readingHandler);
+      };
+      
+      ndef.addEventListener("reading", readingHandler);
+      
+      setTimeout(() => {
+        ndef.removeEventListener("reading", readingHandler);
+        if (!currentUpgradeCharacter) {
+          statusElement.textContent = '❌ Scan timeout - please try again';
+          statusElement.style.color = '#ff4500';
+          scanBtn.disabled = false;
+        }
+      }, 5000);
+      
+    } catch (error) {
+      console.log('NFC scan error:', error);
+      statusElement.textContent = '❌ NFC scan failed - please try again';
+      statusElement.style.color = '#ff4500';
+      scanBtn.disabled = false;
+    }
+  } else {
+    const randomChar = characters[Math.floor(Math.random() * characters.length)];
+    loadCharacterForUpgrade(randomChar);
+  }
+}
+
+function loadCharacterForUpgrade(characterData) {
+  const sanitizedUuid = String(characterData.uuid || `random-${Date.now()}`).substring(0, 100);
+  
+  if (!characterUpgrades[sanitizedUuid]) {
+    characterUpgrades[sanitizedUuid] = {
+      hpBonus: 0,
+      attackBonus: 0,
+      speedBonus: 0,
+      points: 0
+    };
+  }
+  
+  currentUpgradeCharacter = {
+    uuid: sanitizedUuid,
+    name: String(characterData.name || 'UNKNOWN').substring(0, 50),
+    data: characterUpgrades[sanitizedUuid]
+  };
+  
+  const statusElement = document.getElementById('upgrade-scan-status');
+  statusElement.textContent = `✅ ${currentUpgradeCharacter.name} loaded!`;
+  statusElement.style.color = '#00ff00';
+  
+  showUpgradeMenu();
+}
 
 function showUpgradeMenu() {
   const upgradeList = document.getElementById('upgrade-list');
   upgradeList.innerHTML = '';
   
-  for (const [uuid, data] of Object.entries(characterUpgrades)) {
-    if (data.points === 0 && data.hpBonus === 0 && data.attackBonus === 0 && data.speedBonus === 0) continue;
-    
-    const card = document.createElement('div');
-    card.className = 'upgrade-card';
-    
-    const charName = document.createElement('div');
-    charName.className = 'upgrade-char-name';
-    charName.textContent = uuid.startsWith('default-') ? uuid.replace('default-', '').toUpperCase() : uuid;
-    
-    const points = document.createElement('div');
-    points.className = 'upgrade-points';
-    points.textContent = `Points: ${data.points}`;
-    
-    const stats = document.createElement('div');
-    stats.className = 'upgrade-stats';
-    stats.innerHTML = `
-      <div>HP Bonus: +${data.hpBonus}</div>
-      <div>ATK Bonus: +${data.attackBonus}</div>
-      <div>SPD Bonus: +${data.speedBonus}</div>
-    `;
-    
-    const controls = document.createElement('div');
-    controls.className = 'upgrade-controls';
-    
-    ['hp', 'attack', 'speed'].forEach(stat => {
-      const btn = document.createElement('button');
-      btn.className = 'upgrade-stat-btn';
-      btn.textContent = `+1 ${stat.toUpperCase()}`;
-      btn.disabled = data.points < 1;
-      btn.addEventListener('click', () => upgradeStat(uuid, stat));
-      controls.appendChild(btn);
-    });
-    
-    card.appendChild(charName);
-    card.appendChild(points);
-    card.appendChild(stats);
-    card.appendChild(controls);
-    upgradeList.appendChild(card);
+  if (!currentUpgradeCharacter) {
+    upgradeList.innerHTML = '<div class="no-upgrades">Scan a card to upgrade your character!</div>';
+    return;
   }
   
-  if (upgradeList.children.length === 0) {
-    upgradeList.innerHTML = '<div class="no-upgrades">No characters to upgrade yet. Battle to earn points!</div>';
-  }
+  const uuid = currentUpgradeCharacter.uuid;
+  const data = currentUpgradeCharacter.data;
+  const charName = currentUpgradeCharacter.name;
+    
+    const card = document.createElement('div');
+  card.className = 'upgrade-card';
+  
+  const charNameDiv = document.createElement('div');
+  charNameDiv.className = 'upgrade-char-name';
+  charNameDiv.textContent = charName;
+  
+  const points = document.createElement('div');
+  points.className = 'upgrade-points';
+  points.textContent = `Points: ${data.points}`;
+  
+  const stats = document.createElement('div');
+  stats.className = 'upgrade-stats';
+  stats.innerHTML = `
+    <div>HP Bonus: +${data.hpBonus}</div>
+    <div>ATK Bonus: +${data.attackBonus}</div>
+    <div>SPD Bonus: +${data.speedBonus}</div>
+  `;
+  
+  const controls = document.createElement('div');
+  controls.className = 'upgrade-controls';
+  
+  ['hp', 'attack', 'speed'].forEach(stat => {
+    const btn = document.createElement('button');
+    btn.className = 'upgrade-stat-btn';
+    btn.textContent = `+1 ${stat.toUpperCase()}`;
+    btn.disabled = data.points < 1;
+    btn.addEventListener('click', () => upgradeStat(uuid, stat));
+    controls.appendChild(btn);
+  });
+  
+  card.appendChild(charNameDiv);
+  card.appendChild(points);
+  card.appendChild(stats);
+  card.appendChild(controls);
+  upgradeList.appendChild(card);
 }
 
 function upgradeStat(uuid, stat) {

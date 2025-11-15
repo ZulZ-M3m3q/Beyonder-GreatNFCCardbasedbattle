@@ -572,6 +572,26 @@ body::before {
   justify-content: center;
 }
 
+.upgrade-scan-container {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.upgrade-scan-status {
+  margin-top: 15px;
+  font-size: 1.2rem;
+  color: #ffaa00;
+  min-height: 30px;
+  text-shadow: 0 0 10px #ff8800;
+}
+
+.no-upgrades {
+  text-align: center;
+  color: #ff8800;
+  font-size: 1.2rem;
+  padding: 40px;
+}
+
 .upgrade-stat-btn {
   flex: 1;
   min-width: 80px;
