@@ -147,6 +147,26 @@ body::before {
   cursor: pointer;
   text-shadow: none;
   box-shadow: 0 0 20px rgba(255, 69, 0, 0.8);
+
+.title-logo {
+  display: block;
+  max-width: 600px;
+  width: 90%;
+  margin: 0 auto 20px;
+  filter: drop-shadow(0 0 20px rgba(255, 69, 0, 0.8));
+  animation: glow 3s infinite;
+}
+
+@keyframes glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(255, 69, 0, 0.8));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(255, 136, 0, 1));
+  }
+}
+
+
   transition: all 0.3s;
   letter-spacing: 2px;
 }
