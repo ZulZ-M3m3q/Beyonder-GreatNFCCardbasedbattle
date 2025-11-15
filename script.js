@@ -1,3 +1,32 @@
+
+let isMuted = true;
+const bgMusic = document.getElementById('background-music');
+const muteBtn = document.getElementById('mute-btn');
+
+muteBtn.addEventListener('click', () => {
+  if (isMuted) {
+    bgMusic.play();
+    muteBtn.textContent = '🔊';
+    isMuted = false;
+  } else {
+    bgMusic.pause();
+    muteBtn.textContent = '🔇';
+    isMuted = true;
+  }
+});
+
+document.getElementById('start-btn').addEventListener('click', async () => {
+  if (isMuted && bgMusic.paused) {
+    bgMusic.play();
+    muteBtn.textContent = '🔊';
+    isMuted = false;
+  }
+  await checkNFCSupport();
+  showScreen('nfc');
+  updateNFCReaderUI();
+});
+
+
 const characters = [
   { name: 'WARRIOR', hp: 100, attack: 15, speed: 50, sprite: '⚔️', imageURL: null, uuid: 'default-warrior' },
   { name: 'MAGE', hp: 80, attack: 20, speed: 60, sprite: '🔮', imageURL: null, uuid: 'default-mage' },
@@ -78,11 +107,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   await loadCharacterUpgrades();
 });
 
-document.getElementById('start-btn').addEventListener('click', async () => {
-  await checkNFCSupport();
-  showScreen('nfc');
-  updateNFCReaderUI();
-});
+
 
 function updateNFCReaderUI() {
   const nfc1 = document.getElementById('nfc1');
@@ -502,27 +527,7 @@ function endBattle() {
 }
 
 document.getElementById('restart-btn').addEventListener('click', () => {
-  player1Character = null;
-  player2Character = null;
-  
-  document.getElementById('nfc1').classList.remove('scanned');
-  document.getElementById('nfc1').innerHTML = `
-    <div class="scan-icon">📡</div>
-    <p>Click to Scan Card</p>
-  `;
-  document.getElementById('char1-info').innerHTML = '';
-  
-  document.getElementById('nfc2').classList.remove('scanned');
-  document.getElementById('nfc2').innerHTML = `
-    <div class="scan-icon">📡</div>
-    <p>Click to Scan Card</p>
-  `;
-  document.getElementById('char2-info').innerHTML = '';
-  
-  document.getElementById('battle-start-btn').disabled = true;
-  
-  showScreen('nfc');
-  updateNFCReaderUI();
+  location.reload();
 });
 
 document.getElementById('upgrade-btn')?.addEventListener('click', async () => {
