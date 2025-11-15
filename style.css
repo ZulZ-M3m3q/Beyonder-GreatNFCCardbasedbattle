@@ -150,8 +150,8 @@ body::before {
 
 .title-logo {
   display: block;
-  max-width: 600px;
-  width: 90%;
+  max-width: 400px;
+  width: 70%;
   margin: 0 auto 20px;
   filter: drop-shadow(0 0 20px rgba(255, 69, 0, 0.8));
   animation: glow 3s infinite;
