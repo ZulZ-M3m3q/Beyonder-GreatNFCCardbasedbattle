@@ -572,9 +572,11 @@ async function scanForUpgrade() {
         }
         
         if (!characterData) {
-          const hash = serialNumber.split(':').reduce((acc, val) => acc + parseInt(val, 16), 0);
-          const charIndex = hash % characters.length;
-          characterData = characters[charIndex];
+          statusElement.textContent = '❌ Invalid NFC card - no character data found';
+          statusElement.style.color = '#ff4500';
+          scanBtn.disabled = false;
+          ndef.removeEventListener("reading", readingHandler);
+          return;
         }
         
         loadCharacterForUpgrade(characterData);
@@ -590,17 +592,18 @@ async function scanForUpgrade() {
           statusElement.style.color = '#ff4500';
           scanBtn.disabled = false;
         }
-      }, 5000);
+      }, 10000);
       
     } catch (error) {
       console.log('NFC scan error:', error);
-      statusElement.textContent = '❌ NFC scan failed - please try again';
+      statusElement.textContent = `❌ NFC scan failed: ${error.message}`;
       statusElement.style.color = '#ff4500';
       scanBtn.disabled = false;
     }
   } else {
-    const randomChar = characters[Math.floor(Math.random() * characters.length)];
-    loadCharacterForUpgrade(randomChar);
+    statusElement.textContent = '❌ NFC not supported on this device';
+    statusElement.style.color = '#ff4500';
+    scanBtn.disabled = false;
   }
 }
 
