@@ -10,6 +10,8 @@ const characters = [
 let player1Character = null;
 let player2Character = null;
 let battleInterval = null;
+let nfcSupported = false;
+let nfcReaders = { 1: null, 2: null };
 
 const screens = {
   title: document.getElementById('title-screen'),
@@ -17,29 +19,154 @@ const screens = {
   battle: document.getElementById('battle-screen')
 };
 
+async function checkNFCSupport() {
+  if ('NDEFReader' in window) {
+    try {
+      const permissionStatus = await navigator.permissions.query({ name: "nfc" });
+      nfcSupported = permissionStatus.state === "granted" || permissionStatus.state === "prompt";
+      console.log('NFC API is supported!', permissionStatus.state);
+      return true;
+    } catch (error) {
+      console.log('NFC permission check failed:', error);
+      nfcSupported = false;
+      return false;
+    }
+  } else {
+    console.log('NFC API not supported in this browser');
+    nfcSupported = false;
+    return false;
+  }
+}
+
 function showScreen(screenName) {
   Object.values(screens).forEach(screen => screen.classList.remove('active'));
   screens[screenName].classList.add('active');
 }
 
-document.getElementById('start-btn').addEventListener('click', () => {
+document.getElementById('start-btn').addEventListener('click', async () => {
+  await checkNFCSupport();
   showScreen('nfc');
+  updateNFCReaderUI();
 });
 
+function updateNFCReaderUI() {
+  const nfc1 = document.getElementById('nfc1');
+  const nfc2 = document.getElementById('nfc2');
+  
+  if (nfcSupported) {
+    nfc1.querySelector('p').textContent = 'Tap NFC Card or Click';
+    nfc2.querySelector('p').textContent = 'Tap NFC Card or Click';
+  } else {
+    nfc1.querySelector('p').textContent = 'Click to Scan Card';
+    nfc2.querySelector('p').textContent = 'Click to Scan Card';
+  }
+}
+
 document.getElementById('nfc1').addEventListener('click', () => {
-  scanCard(1);
+  initiateNFCScan(1);
 });
 
 document.getElementById('nfc2').addEventListener('click', () => {
-  scanCard(2);
+  initiateNFCScan(2);
 });
 
-function scanCard(playerNum) {
-  const randomChar = characters[Math.floor(Math.random() * characters.length)];
+async function initiateNFCScan(playerNum) {
+  const nfcReader = document.getElementById(`nfc${playerNum}`);
+  
+  if (nfcSupported && 'NDEFReader' in window) {
+    try {
+      nfcReader.innerHTML = `
+        <div class="scan-icon scanning">📡</div>
+        <p>Reading NFC Tag...</p>
+        <p class="scan-hint">Hold card near device</p>
+      `;
+      
+      if (!nfcReaders[playerNum]) {
+        nfcReaders[playerNum] = new NDEFReader();
+      }
+      
+      await nfcReaders[playerNum].scan();
+      console.log(`NFC scan started for Player ${playerNum}`);
+      
+      nfcReaders[playerNum].addEventListener("reading", ({ message, serialNumber }) => {
+        console.log(`NFC tag detected! Serial: ${serialNumber}`);
+        
+        let characterData = null;
+        
+        for (const record of message.records) {
+          if (record.recordType === "text") {
+            const textDecoder = new TextDecoder(record.encoding);
+            const text = textDecoder.decode(record.data);
+            console.log('NFC Text data:', text);
+            
+            characterData = parseNFCData(text);
+            break;
+          }
+        }
+        
+        if (!characterData) {
+          const hash = serialNumber.split(':').reduce((acc, val) => acc + parseInt(val, 16), 0);
+          const charIndex = hash % characters.length;
+          characterData = characters[charIndex];
+        }
+        
+        assignCharacter(playerNum, characterData);
+      }, { once: true });
+      
+      nfcReaders[playerNum].addEventListener("readingerror", () => {
+        console.log('NFC read error, falling back to random selection');
+        const randomChar = characters[Math.floor(Math.random() * characters.length)];
+        assignCharacter(playerNum, randomChar);
+      }, { once: true });
+      
+      setTimeout(() => {
+        if (playerNum === 1 ? !player1Character : !player2Character) {
+          console.log('NFC timeout, using random character');
+          const randomChar = characters[Math.floor(Math.random() * characters.length)];
+          assignCharacter(playerNum, randomChar);
+        }
+      }, 5000);
+      
+    } catch (error) {
+      console.log('NFC scan error:', error);
+      const randomChar = characters[Math.floor(Math.random() * characters.length)];
+      assignCharacter(playerNum, randomChar);
+    }
+  } else {
+    const randomChar = characters[Math.floor(Math.random() * characters.length)];
+    assignCharacter(playerNum, randomChar);
+  }
+}
+
+function parseNFCData(text) {
+  try {
+    const data = JSON.parse(text);
+    if (data.name && data.hp && data.attack && data.sprite) {
+      return data;
+    }
+  } catch (e) {
+    const charName = text.toUpperCase().trim();
+    const foundChar = characters.find(c => c.name === charName);
+    if (foundChar) {
+      return foundChar;
+    }
+  }
+  return null;
+}
+
+function assignCharacter(playerNum, characterData) {
+  const sanitizedName = String(characterData.name).substring(0, 50);
+  const sanitizedHp = Math.max(1, Math.min(999, parseInt(characterData.hp) || 100));
+  const sanitizedAttack = Math.max(1, Math.min(99, parseInt(characterData.attack) || 10));
+  const sanitizedSprite = String(characterData.sprite).substring(0, 10);
+  
   const charData = {
-    ...randomChar,
-    maxHp: randomChar.hp,
-    currentHp: randomChar.hp
+    name: sanitizedName,
+    hp: sanitizedHp,
+    attack: sanitizedAttack,
+    sprite: sanitizedSprite,
+    maxHp: sanitizedHp,
+    currentHp: sanitizedHp
   };
 
   if (playerNum === 1) {
@@ -50,18 +177,31 @@ function scanCard(playerNum) {
 
   const nfcReader = document.getElementById(`nfc${playerNum}`);
   nfcReader.classList.add('scanned');
-  nfcReader.innerHTML = `
-    <div class="scan-icon">✅</div>
-    <p>Card Scanned!</p>
-  `;
+  nfcReader.innerHTML = '';
+  
+  const scanIcon = document.createElement('div');
+  scanIcon.className = 'scan-icon';
+  scanIcon.textContent = '✅';
+  
+  const scanText = document.createElement('p');
+  scanText.textContent = 'Card Scanned!';
+  
+  nfcReader.appendChild(scanIcon);
+  nfcReader.appendChild(scanText);
 
   const charInfo = document.getElementById(`char${playerNum}-info`);
-  charInfo.innerHTML = `
-    <div class="char-name">${charData.name}</div>
-    <div class="char-stats">
-      ${charData.sprite} HP: ${charData.hp} | ATK: ${charData.attack}
-    </div>
-  `;
+  charInfo.innerHTML = '';
+  
+  const charNameDiv = document.createElement('div');
+  charNameDiv.className = 'char-name';
+  charNameDiv.textContent = charData.name;
+  
+  const charStatsDiv = document.createElement('div');
+  charStatsDiv.className = 'char-stats';
+  charStatsDiv.textContent = `${charData.sprite} HP: ${charData.hp} | ATK: ${charData.attack}`;
+  
+  charInfo.appendChild(charNameDiv);
+  charInfo.appendChild(charStatsDiv);
 
   if (player1Character && player2Character) {
     document.getElementById('battle-start-btn').disabled = false;
@@ -139,7 +279,7 @@ function executeTurn() {
     
     const defenderStatus = defenderFighter.querySelector('.fighter-status');
     defenderStatus.textContent = 'BLOCKED!';
-    defenderStatus.style.color = '#4ecdc4';
+    defenderStatus.style.color = '#ffaa00';
     setTimeout(() => defenderStatus.textContent = '', 1000);
     
     addLog(`${defenderChar.name} BLOCKED the attack!`, 'block');
@@ -154,7 +294,7 @@ function executeTurn() {
   
   const defenderStatus = defenderFighter.querySelector('.fighter-status');
   defenderStatus.textContent = `-${damage} HP`;
-  defenderStatus.style.color = '#ff6b6b';
+  defenderStatus.style.color = '#ff4500';
   setTimeout(() => defenderStatus.textContent = '', 1000);
   
   let logMessage = `${attackerChar.name} attacks ${defenderChar.name} for ${damage} damage!`;
@@ -211,4 +351,5 @@ document.getElementById('restart-btn').addEventListener('click', () => {
   document.getElementById('battle-start-btn').disabled = true;
   
   showScreen('nfc');
+  updateNFCReaderUI();
 });
