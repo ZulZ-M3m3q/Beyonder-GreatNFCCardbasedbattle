@@ -326,6 +326,10 @@ document.getElementById('restart-btn').addEventListener('click', () => {
   player1Character = null;
   player2Character = null;
   
+  // Reset NFC readers to clean up event listeners
+  nfcReaders[1] = null;
+  nfcReaders[2] = null;
+  
   document.getElementById('nfc1').classList.remove('scanned');
   document.getElementById('nfc1').innerHTML = `
     <div class="scan-icon">📡</div>
