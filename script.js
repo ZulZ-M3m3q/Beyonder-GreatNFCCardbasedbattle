@@ -526,6 +526,7 @@ document.getElementById('restart-btn').addEventListener('click', () => {
 });
 
 document.getElementById('upgrade-btn')?.addEventListener('click', async () => {
+  await checkNFCSupport();
   await loadCharacterUpgrades();
   showScreen('upgrade');
   showUpgradeMenu();
