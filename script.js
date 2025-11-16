@@ -280,9 +280,9 @@ function parseNFCData(text) {
 
 function assignCharacter(playerNum, characterData) {
   const sanitizedName = String(characterData.name || 'UNKNOWN').substring(0, 50);
-  const baseHp = Math.max(1, Math.min(999, parseInt(characterData.hp) || 100));
-  const baseAttack = Math.max(1, Math.min(99, parseInt(characterData.attack) || 10));
-  const baseSpeed = Math.max(1, Math.min(99, parseInt(characterData.speed) || 50));
+  const baseHp = parseInt(characterData.hp) || 100;
+  const baseAttack = parseInt(characterData.attack) || 10;
+  const baseSpeed = parseInt(characterData.speed) || 50;
   const sanitizedUuid = String(characterData.uuid || `random-${Date.now()}`).substring(0, 100);
   
   let imageURL = null;
