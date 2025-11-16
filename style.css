@@ -143,6 +143,17 @@ body::before {
   }
 }
 
+
+.upgrade-level {
+  text-align: center;
+  padding: 10px;
+  margin: 10px 0;
+  background: rgba(255, 136, 0, 0.2);
+  border: 2px solid #ff8800;
+  border-radius: 8px;
+}
+
+
 .subtitle {
   text-align: center;
   font-size: 1.5rem;
