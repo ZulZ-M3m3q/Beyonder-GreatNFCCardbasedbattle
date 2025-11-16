@@ -481,13 +481,19 @@ function initBattle() {
 
   document.getElementById('game-over').classList.add('hidden');
 
+  // Determine who goes first based on speed
+  let currentAttacker = player1Character.speed >= player2Character.speed ? 1 : 2;
   let turnCount = 0;
+
   battleInterval = setInterval(() => {
     turnCount++;
-    executeTurn();
+    executeTurn(currentAttacker);
 
     if (player1Character.currentHp <= 0 || player2Character.currentHp <= 0) {
       endBattle();
+    } else {
+      // Alternate attackers
+      currentAttacker = currentAttacker === 1 ? 2 : 1;
     }
   }, 2000);
 }
@@ -557,20 +563,8 @@ function updateLevelDisplay(num, character) {
   `;
 }
 
-function executeTurn() {
-  const speedDiff = player1Character.speed - player2Character.speed;
-  const speedBonus = Math.abs(speedDiff) * 0.02;
-
-  let attacker, defender;
-  if (speedDiff > 0) {
-    attacker = Math.random() < (0.5 + speedBonus) ? 1 : 2;
-  } else if (speedDiff < 0) {
-    attacker = Math.random() < (0.5 - speedBonus) ? 1 : 2;
-  } else {
-    attacker = Math.random() < 0.5 ? 1 : 2;
-  }
-
-  defender = attacker === 1 ? 2 : 1;
+function executeTurn(attacker) {
+  const defender = attacker === 1 ? 2 : 1;
 
   const attackerChar = attacker === 1 ? player1Character : player2Character;
   const defenderChar = defender === 1 ? player1Character : player2Character;
