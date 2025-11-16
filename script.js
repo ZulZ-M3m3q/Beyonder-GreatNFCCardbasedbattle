@@ -174,27 +174,43 @@ async function initiateNFCScan(playerNum) {
       }, { once: true });
       
       nfcReaders[playerNum].addEventListener("readingerror", () => {
-        console.log('NFC read error, falling back to random selection');
-        const randomChar = characters[Math.floor(Math.random() * characters.length)];
-        assignCharacter(playerNum, randomChar);
+        console.log('NFC read error');
+        const nfcReader = document.getElementById(`nfc${playerNum}`);
+        nfcReader.innerHTML = `
+          <div class="scan-icon" style="color: #ff4500;">❌</div>
+          <p style="color: #ff4500;">Read Error!</p>
+          <p style="color: #ffaa00; font-size: 0.9rem;">Please try again</p>
+        `;
       }, { once: true });
       
       setTimeout(() => {
         if (playerNum === 1 ? !player1Character : !player2Character) {
-          console.log('NFC timeout, using random character');
-          const randomChar = characters[Math.floor(Math.random() * characters.length)];
-          assignCharacter(playerNum, randomChar);
+          console.log('NFC timeout');
+          const nfcReader = document.getElementById(`nfc${playerNum}`);
+          nfcReader.innerHTML = `
+            <div class="scan-icon" style="color: #ffaa00;">⏱️</div>
+            <p style="color: #ffaa00;">Scan Timeout</p>
+            <p style="color: #ff8800; font-size: 0.9rem;">Click to try again</p>
+          `;
         }
       }, 5000);
       
     } catch (error) {
       console.log('NFC scan error:', error);
-      const randomChar = characters[Math.floor(Math.random() * characters.length)];
-      assignCharacter(playerNum, randomChar);
+      const nfcReader = document.getElementById(`nfc${playerNum}`);
+      nfcReader.innerHTML = `
+        <div class="scan-icon" style="color: #ff4500;">❌</div>
+        <p style="color: #ff4500;">Scan Failed!</p>
+        <p style="color: #ffaa00; font-size: 0.9rem;">Click to try again</p>
+      `;
     }
   } else {
-    const randomChar = characters[Math.floor(Math.random() * characters.length)];
-    assignCharacter(playerNum, randomChar);
+    const nfcReader = document.getElementById(`nfc${playerNum}`);
+    nfcReader.innerHTML = `
+      <div class="scan-icon" style="color: #ffaa00;">⚠️</div>
+      <p style="color: #ffaa00;">NFC Not Supported</p>
+      <p style="color: #ff8800; font-size: 0.9rem;">Please use a compatible device</p>
+    `;
   }
 }
 
@@ -279,11 +295,54 @@ function parseNFCData(text) {
 }
 
 function assignCharacter(playerNum, characterData) {
+  const sanitizedUuid = String(characterData.uuid || '').substring(0, 100);
+  
+  // Validate that this is a Beyonder card
+  if (!sanitizedUuid || !sanitizedUuid.includes('beyonder')) {
+    const nfcReader = document.getElementById(`nfc${playerNum}`);
+    nfcReader.classList.remove('scanned');
+    nfcReader.innerHTML = '';
+    
+    const scanIcon = document.createElement('div');
+    scanIcon.className = 'scan-icon';
+    scanIcon.textContent = '❌';
+    scanIcon.style.color = '#ff4500';
+    
+    const scanText = document.createElement('p');
+    scanText.textContent = 'INVALID CARD!';
+    scanText.style.color = '#ff4500';
+    
+    const errorText = document.createElement('p');
+    errorText.textContent = 'Only Beyonder cards can be used';
+    errorText.style.color = '#ffaa00';
+    errorText.style.fontSize = '0.9rem';
+    errorText.style.marginTop = '10px';
+    
+    nfcReader.appendChild(scanIcon);
+    nfcReader.appendChild(scanText);
+    nfcReader.appendChild(errorText);
+    
+    console.log(`Card rejected for Player ${playerNum}: Not a Beyonder card (UUID: ${sanitizedUuid})`);
+    
+    // Reset the reader after 3 seconds
+    setTimeout(() => {
+      nfcReader.innerHTML = '';
+      const resetIcon = document.createElement('div');
+      resetIcon.className = 'scan-icon';
+      resetIcon.textContent = '📡';
+      const resetText = document.createElement('p');
+      resetText.textContent = nfcSupported ? 'Tap NFC Card or Click' : 'Click to Scan Card';
+      nfcReader.appendChild(resetIcon);
+      nfcReader.appendChild(resetText);
+    }, 3000);
+    
+    return;
+  }
+  
   const sanitizedName = String(characterData.name || 'UNKNOWN').substring(0, 50);
   const baseHp = parseInt(characterData.hp) || 100;
   const baseAttack = parseInt(characterData.attack) || 10;
   const baseSpeed = parseInt(characterData.speed) || 50;
-  const sanitizedUuid = String(characterData.uuid || `random-${Date.now()}`).substring(0, 100);
   
   let imageURL = null;
   if (characterData.imageURL && typeof characterData.imageURL === 'string') {
