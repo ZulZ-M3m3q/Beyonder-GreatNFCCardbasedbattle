@@ -149,7 +149,7 @@ async function initiateNFCScan(playerNum) {
 
       // Create new abort controller for this scan
       nfcAbortControllers[playerNum] = new AbortController();
-      
+
       // Create a fresh NFC reader
       nfcReaders[playerNum] = new NDEFReader();
 
@@ -185,7 +185,7 @@ async function initiateNFCScan(playerNum) {
             <p style="color: #ff4500;">No Character Data!</p>
             <p style="color: #ffaa00; font-size: 0.9rem;">Please scan a valid Beyonder card</p>
           `;
-          
+
           setTimeout(() => {
             nfcReader.innerHTML = '';
             const resetIcon = document.createElement('div');
@@ -232,7 +232,7 @@ async function initiateNFCScan(playerNum) {
         console.log('NFC scan aborted for Player', playerNum);
         return;
       }
-      
+
       console.log('NFC scan error:', error);
       const nfcReader = document.getElementById(`nfc${playerNum}`);
       nfcReader.innerHTML = `
@@ -240,7 +240,7 @@ async function initiateNFCScan(playerNum) {
         <p style="color: #ff4500;">Scan Failed!</p>
         <p style="color: #ffaa00; font-size: 0.9rem;">Click to try again</p>
       `;
-      
+
       // Clear abort controller on error
       nfcAbortControllers[playerNum] = null;
     }
@@ -484,7 +484,7 @@ function initBattle() {
   let turnCount = 0;
   battleInterval = setInterval(() => {
     turnCount++;
-    executeTurn();
+    executeTurn(turnCount % 2 === 1 ? 1 : 2); // Simple alternating turns
 
     if (player1Character.currentHp <= 0 || player2Character.currentHp <= 0) {
       endBattle();
@@ -536,18 +536,18 @@ function updateHealth(num, character) {
 function updateLevelDisplay(num, character) {
   const fighter = document.getElementById(`fighter${num}`);
   let levelDisplay = fighter.querySelector('.level-display');
-  
+
   if (!levelDisplay) {
     levelDisplay = document.createElement('div');
     levelDisplay.className = 'level-display';
     fighter.querySelector('.health-container').appendChild(levelDisplay);
   }
-  
+
   const upgrades = characterUpgrades[character.uuid];
   const currentLevel = upgrades ? upgrades.level : 1;
   const currentExp = upgrades ? upgrades.exp : 0;
   const expNeeded = currentLevel * 100;
-  
+
   levelDisplay.innerHTML = `
     <div class="level-text">Level ${currentLevel}</div>
     <div class="exp-bar-container">
@@ -557,26 +557,11 @@ function updateLevelDisplay(num, character) {
   `;
 }
 
-function executeTurn() {
-  const speedDiff = player1Character.speed - player2Character.speed;
-  const speedBonus = Math.abs(speedDiff) * 0.02;
-
-  let attacker, defender;
-  if (speedDiff > 0) {
-    attacker = Math.random() < (0.5 + speedBonus) ? 1 : 2;
-  } else if (speedDiff < 0) {
-    attacker = Math.random() < (0.5 - speedBonus) ? 1 : 2;
-  } else {
-    attacker = Math.random() < 0.5 ? 1 : 2;
-  }
-
-  defender = attacker === 1 ? 2 : 1;
+function executeTurn(attacker) {
+  const defender = attacker === 1 ? 2 : 1;
 
   const attackerChar = attacker === 1 ? player1Character : player2Character;
   const defenderChar = defender === 1 ? player1Character : player2Character;
-
-  const blockChance = 0.25;
-  const isBlocking = Math.random() < blockChance;
 
   const attackerFighter = document.getElementById(`fighter${attacker}`);
   const defenderFighter = document.getElementById(`fighter${defender}`);
@@ -584,34 +569,34 @@ function executeTurn() {
   attackerFighter.classList.add('attacking');
   setTimeout(() => attackerFighter.classList.remove('attacking'), 500);
 
-  if (isBlocking) {
-    defenderFighter.classList.add('blocking');
-    setTimeout(() => defenderFighter.classList.remove('blocking'), 500);
-
-    const defenderStatus = defenderFighter.querySelector('.fighter-status');
-    defenderStatus.textContent = 'BLOCKED!';
-    defenderStatus.style.color = '#ffaa00';
-    setTimeout(() => defenderStatus.textContent = '', 1000);
-
-    addLog(`${defenderChar.name} BLOCKED the attack!`, 'block');
-    return;
-  }
+  // Calculate damage (blocks reduce damage by 75%, not eliminate it completely)
+  const blockChance = 0.25;
+  const isBlocking = Math.random() < blockChance;
 
   const multiplier = Math.floor(Math.random() * 5) + 1;
-  const damage = Math.floor(attackerChar.attack * multiplier);
+  let damage = Math.floor(attackerChar.attack * multiplier);
+
+  if (isBlocking) {
+    damage = Math.floor(damage * 0.25); // Block reduces damage to 25%
+    defenderFighter.classList.add('blocking');
+    setTimeout(() => defenderFighter.classList.remove('blocking'), 500);
+  }
 
   defenderChar.currentHp = Math.max(0, defenderChar.currentHp - damage);
   updateHealth(defender, defenderChar);
 
   const defenderStatus = defenderFighter.querySelector('.fighter-status');
   defenderStatus.textContent = `-${damage} HP`;
-  defenderStatus.style.color = '#ff4500';
+  defenderStatus.style.color = isBlocking ? '#ffaa00' : '#ff4500';
   setTimeout(() => defenderStatus.textContent = '', 1000);
 
   let logMessage = `${attackerChar.name} attacks ${defenderChar.name} for ${damage} damage!`;
   let logClass = 'attack';
 
-  if (multiplier > 1) {
+  if (isBlocking) {
+    logMessage += ` (BLOCKED! Reduced damage)`;
+    logClass = 'block';
+  } else if (multiplier > 1) {
     logMessage += ` (${multiplier}x MULTIPLIER!)`;
     logClass = 'multiplier';
   }
