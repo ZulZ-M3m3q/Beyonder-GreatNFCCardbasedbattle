@@ -472,6 +472,7 @@ function setupFighter(num, character) {
   }
 
   updateHealth(num, character);
+  updateLevelDisplay(num, character);
 }
 
 function updateHealth(num, character) {
@@ -489,6 +490,30 @@ function updateHealth(num, character) {
   } else if (healthPercent <= 50) {
     healthFill.classList.add('low');
   }
+}
+
+function updateLevelDisplay(num, character) {
+  const fighter = document.getElementById(`fighter${num}`);
+  let levelDisplay = fighter.querySelector('.level-display');
+  
+  if (!levelDisplay) {
+    levelDisplay = document.createElement('div');
+    levelDisplay.className = 'level-display';
+    fighter.querySelector('.health-container').appendChild(levelDisplay);
+  }
+  
+  const upgrades = characterUpgrades[character.uuid];
+  const currentLevel = upgrades ? upgrades.level : 1;
+  const currentExp = upgrades ? upgrades.exp : 0;
+  const expNeeded = currentLevel * 100;
+  
+  levelDisplay.innerHTML = `
+    <div class="level-text">Level ${currentLevel}</div>
+    <div class="exp-bar-container">
+      <div class="exp-bar-fill" style="width: ${(currentExp / expNeeded) * 100}%"></div>
+    </div>
+    <div class="exp-text">${currentExp} / ${expNeeded} EXP</div>
+  `;
 }
 
 function executeTurn() {
@@ -622,6 +647,10 @@ function endBattle() {
   playerPoints[loserNum] = loserUpgrades.points;
 
   saveCharacterUpgrades();
+
+  // Update level displays
+  updateLevelDisplay(winnerNum, winner);
+  updateLevelDisplay(loserNum, loser);
 
   addLog(`${winner.name} WINS!`, 'multiplier');
   addLog(`${winner.name} gained ${expAward} EXP! (Level ${winnerUpgrades.level})`, 'multiplier');
