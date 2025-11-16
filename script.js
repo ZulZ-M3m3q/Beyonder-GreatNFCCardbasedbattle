@@ -40,6 +40,7 @@ let player2Character = null;
 let battleInterval = null;
 let nfcSupported = false;
 let nfcReaders = { 1: null, 2: null };
+let nfcAbortControllers = { 1: null, 2: null };
 let characterUpgrades = {};
 let playerPoints = { 1: 0, 2: 0 };
 
@@ -132,6 +133,12 @@ document.getElementById('nfc2').addEventListener('click', () => {
 async function initiateNFCScan(playerNum) {
   const nfcReader = document.getElementById(`nfc${playerNum}`);
 
+  // Abort any existing scan for this player
+  if (nfcAbortControllers[playerNum]) {
+    nfcAbortControllers[playerNum].abort();
+    console.log(`Aborted previous NFC scan for Player ${playerNum}`);
+  }
+
   if (nfcSupported && 'NDEFReader' in window) {
     try {
       nfcReader.innerHTML = `
@@ -140,15 +147,22 @@ async function initiateNFCScan(playerNum) {
         <p class="scan-hint">Hold card near device</p>
       `;
 
-      if (!nfcReaders[playerNum]) {
-        nfcReaders[playerNum] = new NDEFReader();
-      }
+      // Create new abort controller for this scan
+      nfcAbortControllers[playerNum] = new AbortController();
+      
+      // Create a fresh NFC reader
+      nfcReaders[playerNum] = new NDEFReader();
 
-      await nfcReaders[playerNum].scan();
+      await nfcReaders[playerNum].scan({ signal: nfcAbortControllers[playerNum].signal });
       console.log(`NFC scan started for Player ${playerNum}`);
 
-      nfcReaders[playerNum].addEventListener("reading", ({ message, serialNumber }) => {
+      const readingHandler = ({ message, serialNumber }) => {
         console.log(`NFC tag detected! Serial: ${serialNumber}`);
+
+        // Cleanup the abort controller since we got a successful read
+        if (nfcAbortControllers[playerNum]) {
+          nfcAbortControllers[playerNum] = null;
+        }
 
         let characterData = null;
 
@@ -164,13 +178,31 @@ async function initiateNFCScan(playerNum) {
         }
 
         if (!characterData) {
-          const hash = serialNumber.split(':').reduce((acc, val) => acc + parseInt(val, 16), 0);
-          const charIndex = hash % characters.length;
-          characterData = characters[charIndex];
+          // This shouldn't happen with real Beyonder cards
+          const nfcReader = document.getElementById(`nfc${playerNum}`);
+          nfcReader.innerHTML = `
+            <div class="scan-icon" style="color: #ff4500;">❌</div>
+            <p style="color: #ff4500;">No Character Data!</p>
+            <p style="color: #ffaa00; font-size: 0.9rem;">Please scan a valid Beyonder card</p>
+          `;
+          
+          setTimeout(() => {
+            nfcReader.innerHTML = '';
+            const resetIcon = document.createElement('div');
+            resetIcon.className = 'scan-icon';
+            resetIcon.textContent = '📡';
+            const resetText = document.createElement('p');
+            resetText.textContent = nfcSupported ? 'Tap NFC Card or Click' : 'Click to Scan Card';
+            nfcReader.appendChild(resetIcon);
+            nfcReader.appendChild(resetText);
+          }, 3000);
+          return;
         }
 
         assignCharacter(playerNum, characterData);
-      }, { once: true });
+      };
+
+      nfcReaders[playerNum].addEventListener("reading", readingHandler, { once: true });
 
       nfcReaders[playerNum].addEventListener("readingerror", () => {
         console.log('NFC read error');
@@ -195,6 +227,12 @@ async function initiateNFCScan(playerNum) {
       }, 5000);
 
     } catch (error) {
+      // Don't show error if it was just an abort from starting a new scan
+      if (error.name === 'AbortError') {
+        console.log('NFC scan aborted for Player', playerNum);
+        return;
+      }
+      
       console.log('NFC scan error:', error);
       const nfcReader = document.getElementById(`nfc${playerNum}`);
       nfcReader.innerHTML = `
@@ -202,6 +240,9 @@ async function initiateNFCScan(playerNum) {
         <p style="color: #ff4500;">Scan Failed!</p>
         <p style="color: #ffaa00; font-size: 0.9rem;">Click to try again</p>
       `;
+      
+      // Clear abort controller on error
+      nfcAbortControllers[playerNum] = null;
     }
   } else {
     const nfcReader = document.getElementById(`nfc${playerNum}`);
