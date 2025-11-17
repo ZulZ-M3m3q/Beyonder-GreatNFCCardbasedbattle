@@ -27,12 +27,12 @@ document.getElementById('start-btn').addEventListener('click', async () => {
 
 
 const characters = [
-  { name: 'WARRIOR', hp: 100, attack: 15, speed: 50, sprite: '⚔️', imageURL: null, uuid: 'default-warrior' },
-  { name: 'MAGE', hp: 80, attack: 20, speed: 60, sprite: '🔮', imageURL: null, uuid: 'default-mage' },
-  { name: 'KNIGHT', hp: 120, attack: 12, speed: 40, sprite: '🛡️', imageURL: null, uuid: 'default-knight' },
-  { name: 'ROGUE', hp: 90, attack: 18, speed: 70, sprite: '🗡️', imageURL: null, uuid: 'default-rogue' },
-  { name: 'PALADIN', hp: 110, attack: 14, speed: 45, sprite: '⚡', imageURL: null, uuid: 'default-paladin' },
-  { name: 'NINJA', hp: 85, attack: 19, speed: 80, sprite: '🥷', imageURL: null, uuid: 'default-ninja' }
+  { name: 'WARRIOR', hp: 100, attack: 15, defence: 10, sprite: '⚔️', imageURL: null, uuid: 'default-warrior' },
+  { name: 'MAGE', hp: 80, attack: 20, defence: 5, sprite: '🔮', imageURL: null, uuid: 'default-mage' },
+  { name: 'KNIGHT', hp: 120, attack: 12, defence: 20, sprite: '🛡️', imageURL: null, uuid: 'default-knight' },
+  { name: 'ROGUE', hp: 90, attack: 18, defence: 8, sprite: '🗡️', imageURL: null, uuid: 'default-rogue' },
+  { name: 'PALADIN', hp: 110, attack: 14, defence: 15, sprite: '⚡', imageURL: null, uuid: 'default-paladin' },
+  { name: 'NINJA', hp: 85, attack: 19, defence: 6, sprite: '🥷', imageURL: null, uuid: 'default-ninja' }
 ];
 
 let player1Character = null;
@@ -275,7 +275,7 @@ function parseNFCData(text) {
 
     if (allParts.length >= 6) {
       const uuid = allParts[allParts.length - 1].trim();
-      const speed = allParts[allParts.length - 2].trim();
+      const defence = allParts[allParts.length - 2].trim();
       const atk = allParts[allParts.length - 3].trim();
       const hp = allParts[allParts.length - 4].trim();
       const name = allParts[allParts.length - 5].trim();
@@ -286,7 +286,7 @@ function parseNFCData(text) {
         name: name || 'UNKNOWN',
         hp: parseInt(hp) || 100,
         attack: parseInt(atk) || 10,
-        speed: parseInt(speed) || 50,
+        defence: parseInt(defence) || 10,
         uuid: uuid || `nfc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       };
 
@@ -309,14 +309,14 @@ function parseNFCData(text) {
     else if (key === 'name') data.name = value;
     else if (key === 'hp') data.hp = parseInt(value);
     else if (key === 'atk' || key === 'attack') data.attack = parseInt(value);
-    else if (key === 'spd' || key === 'speed') data.speed = parseInt(value);
+    else if (key === 'def' || key === 'defence' || key === 'defense') data.defence = parseInt(value);
     else if (key === 'uuid') data.uuid = value;
   }
 
   console.log('Parsed multi-line NFC data:', data);
 
   if (data.name && (data.hp || data.attack)) {
-    if (!data.speed) data.speed = 50;
+    if (!data.defence) data.defence = 10;
     if (!data.hp) data.hp = 100;
     if (!data.attack) data.attack = 10;
     if (!data.uuid) data.uuid = `nfc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -391,7 +391,7 @@ function assignCharacter(playerNum, characterData) {
   const sanitizedName = String(characterData.name || 'UNKNOWN').substring(0, 50);
   const baseHp = parseInt(characterData.hp) || 100;
   const baseAttack = parseInt(characterData.attack) || 10;
-  const baseSpeed = parseInt(characterData.speed) || 50;
+  const baseDefence = parseInt(characterData.defence) || 10;
 
   let imageURL = null;
   if (characterData.imageURL && typeof characterData.imageURL === 'string') {
@@ -404,7 +404,7 @@ function assignCharacter(playerNum, characterData) {
     characterUpgrades[sanitizedUuid] = {
       hpBonus: 0,
       attackBonus: 0,
-      speedBonus: 0,
+      defenceBonus: 0,
       points: 0,
       level: 1,
       exp: 0
@@ -426,15 +426,15 @@ function assignCharacter(playerNum, characterData) {
     name: sanitizedName,
     baseHp: baseHp,
     baseAttack: baseAttack,
-    baseSpeed: baseSpeed,
-    hp: (baseHp + upgrades.hpBonus) * levelMultiplier,
-    attack: (baseAttack + upgrades.attackBonus) * levelMultiplier,
-    speed: (baseSpeed + upgrades.speedBonus) * levelMultiplier,
+    baseDefence: baseDefence,
+    hp: (baseHp + (upgrades.hpBonus * 100)) * levelMultiplier,
+    attack: (baseAttack + (upgrades.attackBonus * 100)) * levelMultiplier,
+    defence: (baseDefence + (upgrades.defenceBonus * 100)) * levelMultiplier,
     sprite: sprite,
     imageURL: imageURL,
     uuid: sanitizedUuid,
-    maxHp: (baseHp + upgrades.hpBonus) * levelMultiplier,
-    currentHp: (baseHp + upgrades.hpBonus) * levelMultiplier
+    maxHp: (baseHp + (upgrades.hpBonus * 100)) * levelMultiplier,
+    currentHp: (baseHp + (upgrades.hpBonus * 100)) * levelMultiplier
   };
 
   if (playerNum === 1) {
@@ -466,7 +466,7 @@ function assignCharacter(playerNum, characterData) {
 
   const charStatsDiv = document.createElement('div');
   charStatsDiv.className = 'char-stats';
-  charStatsDiv.textContent = `${charData.sprite} HP: ${charData.hp} | ATK: ${charData.attack} | SPD: ${charData.speed}`;
+  charStatsDiv.textContent = `${charData.sprite} HP: ${charData.hp} | ATK: ${charData.attack} | DEF: ${charData.defence}`;
 
   charInfo.appendChild(charNameDiv);
   charInfo.appendChild(charStatsDiv);
