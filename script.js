@@ -48,7 +48,8 @@ const screens = {
   title: document.getElementById('title-screen'),
   nfc: document.getElementById('nfc-screen'),
   battle: document.getElementById('battle-screen'),
-  upgrade: document.getElementById('upgrade-screen')
+  upgrade: document.getElementById('upgrade-screen'),
+  'mobile-warning': document.getElementById('mobile-warning')
 };
 
 async function loadCharacterUpgrades() {
@@ -105,6 +106,14 @@ function showScreen(screenName) {
 
 window.addEventListener('DOMContentLoaded', async () => {
   await loadCharacterUpgrades();
+  
+  // Check if mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isSmallScreen = window.innerWidth < 768;
+  
+  if (isMobile || isSmallScreen) {
+    showScreen('mobile-warning');
+  }
 });
 
 
@@ -481,13 +490,19 @@ function initBattle() {
 
   document.getElementById('game-over').classList.add('hidden');
 
-  let turnCount = 0;
+  // Determine who goes first based on speed
+  let currentAttacker = player1Character.speed >= player2Character.speed ? 1 : 2;
+  
+  addLog(`${currentAttacker === 1 ? player1Character.name : player2Character.name} goes first! (Higher Speed)`, 'multiplier');
+
   battleInterval = setInterval(() => {
-    turnCount++;
-    executeTurn(turnCount % 2 === 1 ? 1 : 2); // Simple alternating turns
+    executeTurn(currentAttacker);
 
     if (player1Character.currentHp <= 0 || player2Character.currentHp <= 0) {
       endBattle();
+    } else {
+      // Strictly alternate turns - no exceptions
+      currentAttacker = currentAttacker === 1 ? 2 : 1;
     }
   }, 2000);
 }

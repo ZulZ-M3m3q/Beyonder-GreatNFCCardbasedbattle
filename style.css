@@ -1,4 +1,15 @@
 
+#mobile-warning .pixel-art {
+  font-size: 8rem;
+  margin: 40px 0;
+}
+
+#mobile-warning p {
+  line-height: 1.6;
+}
+
+
+
 .mute-btn {
   position: fixed;
   top: 20px;
