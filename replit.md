@@ -28,10 +28,12 @@ Preferred communication style: Simple, everyday language.
 - Cons: Manual DOM management, no reactivity patterns, harder to maintain as complexity grows
 
 **Character Data Structure**
-- Characters are defined with properties: name, HP, attack, sprite (emoji), color, maxHP, and currentHP
-- Six pre-defined character types provide variety in gameplay
-- Random selection simulates the "card scanning" mechanic
-- The structure supports turn-based battle calculations with HP tracking
+- Characters are defined with properties: name, HP, attack, defence, sprite (emoji), imageURL, uuid, maxHP, and currentHP
+- Six pre-defined character types provide variety in gameplay (Warrior, Mage, Knight, Rogue, Paladin, Ninja)
+- Each character has unique base stats balancing HP, attack power, and defensive capabilities
+- Defence stat reduces incoming damage (damage = attack - defence, minimum 1)
+- NFC card scanning (or simulated scanning) loads character data with persistent upgrades
+- The structure supports turn-based battle calculations with HP tracking and damage mitigation
 
 **Animation and Visual Effects**
 - CSS animations create the arcade aesthetic (neon text effects, scanlines, fade-ins)
@@ -41,12 +43,14 @@ Preferred communication style: Simple, everyday language.
 
 ### Game Logic Architecture
 
-**Turn-Based Battle System**
-- Battles are automated using `setInterval` for turn execution
-- Each turn, both characters attack simultaneously and HP is reduced
-- Battle continues until one or both characters reach 0 HP
-- This automated approach creates spectacle rather than requiring player input during battles
-- Alternative considered: Manual turn-by-turn button clicking (rejected for pacing reasons)
+**Roulette-Based Battle System (November 17, 2025)**
+- Battles use a roulette mechanic where players press STOP buttons to lock in random numbers (1-5)
+- Higher number attacks each turn; ties result in no attacks
+- Damage calculation: Attack - Defence (minimum 1 damage to prevent stalemates)
+- 25% chance for defender to block, reducing damage to 25% of original
+- Battle continues until one character's HP reaches 0
+- Winner gains experience points for leveling up
+- Replaced original automated battle system for more player engagement
 
 **State Management**
 - Global variables (`player1Character`, `player2Character`, `battleInterval`) track game state
@@ -59,6 +63,16 @@ Preferred communication style: Simple, everyday language.
 - Click event listeners handle all user interactions (start game, scan cards, start battle)
 - The "Start Battle" button is disabled until both players have scanned characters
 - Simulated NFC scanning is instant click-based selection with random character assignment
+
+**Upgrade and Progression System (November 17, 2025)**
+- Characters gain experience points from battles (25 EXP for win, 50 for perfect win)
+- Leveling system: Each level requires 100 more EXP than the previous (Level 1→2 = 100 EXP, Level 2→3 = 200 EXP, etc.)
+- Level multipliers apply to all character stats (HP, Attack, Defence)
+- Upgrade points can be spent to permanently boost character stats
+- Upgrade multiplier: 1 point = +100 stat increase (e.g., 20 points in attack = +2000 attack)
+- Three upgradeable stats: HP Bonus, Attack Bonus, Defence Bonus
+- Character progress saved to localStorage with automatic migration for legacy data
+- Legacy save data migration: Old "speed" stat automatically converted to "defence" while preserving upgrade values
 
 ## External Dependencies
 
