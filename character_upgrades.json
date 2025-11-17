@@ -3,7 +3,7 @@
   "default-warrior": {
     "hpBonus": 0,
     "attackBonus": 0,
-    "speedBonus": 0,
+    "defenceBonus": 0,
     "points": 0,
     "level": 1,
     "exp": 0
@@ -11,7 +11,7 @@
   "default-mage": {
     "hpBonus": 0,
     "attackBonus": 0,
-    "speedBonus": 0,
+    "defenceBonus": 0,
     "points": 0,
     "level": 1,
     "exp": 0
@@ -19,7 +19,7 @@
   "default-knight": {
     "hpBonus": 0,
     "attackBonus": 0,
-    "speedBonus": 0,
+    "defenceBonus": 0,
     "points": 0,
     "level": 1,
     "exp": 0
@@ -27,7 +27,7 @@
   "default-rogue": {
     "hpBonus": 0,
     "attackBonus": 0,
-    "speedBonus": 0,
+    "defenceBonus": 0,
     "points": 0,
     "level": 1,
     "exp": 0
@@ -35,7 +35,7 @@
   "default-paladin": {
     "hpBonus": 0,
     "attackBonus": 0,
-    "speedBonus": 0,
+    "defenceBonus": 0,
     "points": 0,
     "level": 1,
     "exp": 0
@@ -43,7 +43,7 @@
   "default-ninja": {
     "hpBonus": 0,
     "attackBonus": 0,
-    "speedBonus": 0,
+    "defenceBonus": 0,
     "points": 0,
     "level": 1,
     "exp": 0

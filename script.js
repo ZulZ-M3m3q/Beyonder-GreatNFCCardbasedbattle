@@ -648,14 +648,15 @@ function executeTurn(attacker) {
   attackerFighter.classList.add('attacking');
   setTimeout(() => attackerFighter.classList.remove('attacking'), 500);
 
-  // Calculate damage (blocks reduce damage by 75%, not eliminate it completely)
+  // Calculate damage: Attack - Defence (minimum 1 damage)
   const blockChance = 0.25;
   const isBlocking = Math.random() < blockChance;
 
-  let damage = Math.floor(attackerChar.attack);
+  let damage = Math.max(1, Math.floor(attackerChar.attack - defenderChar.defence));
 
   if (isBlocking) {
     damage = Math.floor(damage * 0.25); // Block reduces damage to 25%
+    damage = Math.max(1, damage); // Ensure at least 1 damage even when blocked
     defenderFighter.classList.add('blocking');
     setTimeout(() => defenderFighter.classList.remove('blocking'), 500);
   }
@@ -734,9 +735,9 @@ function endBattle() {
   // Update character stats based on new level
   const updateCharacterStats = (character, upgrades) => {
     const levelMultiplier = upgrades.level;
-    character.hp = (character.baseHp + upgrades.hpBonus) * levelMultiplier;
-    character.attack = (character.baseAttack + upgrades.attackBonus) * levelMultiplier;
-    character.speed = (character.baseSpeed + upgrades.speedBonus) * levelMultiplier;
+    character.hp = (character.baseHp + (upgrades.hpBonus * 100)) * levelMultiplier;
+    character.attack = (character.baseAttack + (upgrades.attackBonus * 100)) * levelMultiplier;
+    character.defence = (character.baseDefence + (upgrades.defenceBonus * 100)) * levelMultiplier;
     character.maxHp = character.hp;
     character.currentHp = character.hp; // Full heal on level up
   };
@@ -859,7 +860,7 @@ function loadCharacterForUpgrade(characterData) {
     characterUpgrades[sanitizedUuid] = {
       hpBonus: 0,
       attackBonus: 0,
-      speedBonus: 0,
+      defenceBonus: 0,
       points: 0,
       level: 1,
       exp: 0
@@ -922,18 +923,18 @@ function showUpgradeMenu() {
   const stats = document.createElement('div');
   stats.className = 'upgrade-stats';
   stats.innerHTML = `
-    <div>HP Bonus: +${data.hpBonus}</div>
-    <div>ATK Bonus: +${data.attackBonus}</div>
-    <div>SPD Bonus: +${data.speedBonus}</div>
+    <div>HP Bonus: +${data.hpBonus * 100}</div>
+    <div>ATK Bonus: +${data.attackBonus * 100}</div>
+    <div>DEF Bonus: +${data.defenceBonus * 100}</div>
   `;
 
   const controls = document.createElement('div');
   controls.className = 'upgrade-controls';
 
-  ['hp', 'attack', 'speed'].forEach(stat => {
+  ['hp', 'attack', 'defence'].forEach(stat => {
     const btn = document.createElement('button');
     btn.className = 'upgrade-stat-btn';
-    btn.textContent = `+1 ${stat.toUpperCase()}`;
+    btn.textContent = `+1 ${stat.toUpperCase()} (+100)`;
     btn.disabled = data.points < 1;
     btn.addEventListener('click', () => upgradeStat(uuid, stat));
     controls.appendChild(btn);
@@ -955,7 +956,7 @@ function upgradeStat(uuid, stat) {
 
   if (stat === 'hp') data.hpBonus += 1;
   else if (stat === 'attack') data.attackBonus += 1;
-  else if (stat === 'speed') data.speedBonus += 1;
+  else if (stat === 'defence') data.defenceBonus += 1;
 
   saveCharacterUpgrades();
   showUpgradeMenu();
