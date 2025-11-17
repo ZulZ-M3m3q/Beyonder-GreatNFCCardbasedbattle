@@ -481,6 +481,10 @@ document.getElementById('battle-start-btn').addEventListener('click', () => {
   initBattle();
 });
 
+let rouletteIntervals = { 1: null, 2: null };
+let rouletteValues = { 1: 1, 2: 1 };
+let rouletteStopped = { 1: false, 2: false };
+
 function initBattle() {
   setupFighter(1, player1Character);
   setupFighter(2, player2Character);
@@ -490,21 +494,81 @@ function initBattle() {
 
   document.getElementById('game-over').classList.add('hidden');
 
-  // Determine who goes first based on speed
-  let currentAttacker = player1Character.speed >= player2Character.speed ? 1 : 2;
-  
-  addLog(`${currentAttacker === 1 ? player1Character.name : player2Character.name} goes first! (Higher Speed)`, 'multiplier');
+  addLog('Press STOP to lock your number!', 'multiplier');
 
-  battleInterval = setInterval(() => {
-    executeTurn(currentAttacker);
+  // Start roulette turn
+  startRouletteTurn();
+}
 
-    if (player1Character.currentHp <= 0 || player2Character.currentHp <= 0) {
-      endBattle();
-    } else {
-      // Strictly alternate turns - no exceptions
-      currentAttacker = currentAttacker === 1 ? 2 : 1;
+function startRouletteTurn() {
+  rouletteStopped = { 1: false, 2: false };
+  rouletteValues = { 1: 1, 2: 1 };
+
+  // Show roulette UI
+  document.getElementById('roulette-container').classList.remove('hidden');
+
+  // Start spinning for both players
+  rouletteIntervals[1] = setInterval(() => {
+    if (!rouletteStopped[1]) {
+      rouletteValues[1] = Math.floor(Math.random() * 5) + 1;
+      document.getElementById('roulette-number-1').textContent = rouletteValues[1];
     }
-  }, 2000);
+  }, 50);
+
+  rouletteIntervals[2] = setInterval(() => {
+    if (!rouletteStopped[2]) {
+      rouletteValues[2] = Math.floor(Math.random() * 5) + 1;
+      document.getElementById('roulette-number-2').textContent = rouletteValues[2];
+    }
+  }, 50);
+}
+
+function stopRoulette(playerNum) {
+  if (rouletteStopped[playerNum]) return;
+
+  rouletteStopped[playerNum] = true;
+  document.getElementById(`roulette-stop-${playerNum}`).disabled = true;
+
+  // Check if both players have stopped
+  if (rouletteStopped[1] && rouletteStopped[2]) {
+    clearInterval(rouletteIntervals[1]);
+    clearInterval(rouletteIntervals[2]);
+
+    setTimeout(() => {
+      executeRouletteTurn();
+    }, 500);
+  }
+}
+
+function executeRouletteTurn() {
+  const value1 = rouletteValues[1];
+  const value2 = rouletteValues[2];
+
+  addLog(`Player 1 rolled ${value1} | Player 2 rolled ${value2}`, 'multiplier');
+
+  // Hide roulette UI
+  document.getElementById('roulette-container').classList.add('hidden');
+  document.getElementById('roulette-stop-1').disabled = false;
+  document.getElementById('roulette-stop-2').disabled = false;
+
+  if (value1 > value2) {
+    addLog(`${player1Character.name} attacks! (${value1} > ${value2})`, 'attack');
+    executeTurn(1);
+  } else if (value2 > value1) {
+    addLog(`${player2Character.name} attacks! (${value2} > ${value1})`, 'attack');
+    executeTurn(2);
+  } else {
+    addLog('TIE! No one attacks this turn!', 'block');
+  }
+
+  if (player1Character.currentHp <= 0 || player2Character.currentHp <= 0) {
+    endBattle();
+  } else {
+    // Start next roulette turn after delay
+    setTimeout(() => {
+      startRouletteTurn();
+    }, 2000);
+  }
 }
 
 function setupFighter(num, character) {
@@ -588,8 +652,7 @@ function executeTurn(attacker) {
   const blockChance = 0.25;
   const isBlocking = Math.random() < blockChance;
 
-  const multiplier = Math.floor(Math.random() * 5) + 1;
-  let damage = Math.floor(attackerChar.attack * multiplier);
+  let damage = Math.floor(attackerChar.attack);
 
   if (isBlocking) {
     damage = Math.floor(damage * 0.25); // Block reduces damage to 25%
@@ -611,9 +674,6 @@ function executeTurn(attacker) {
   if (isBlocking) {
     logMessage += ` (BLOCKED! Reduced damage)`;
     logClass = 'block';
-  } else if (multiplier > 1) {
-    logMessage += ` (${multiplier}x MULTIPLIER!)`;
-    logClass = 'multiplier';
   }
 
   addLog(logMessage, logClass);
@@ -630,6 +690,9 @@ function addLog(message, className = '') {
 
 function endBattle() {
   clearInterval(battleInterval);
+  clearInterval(rouletteIntervals[1]);
+  clearInterval(rouletteIntervals[2]);
+  document.getElementById('roulette-container').classList.add('hidden');
 
   let winner, loser, winnerNum, loserNum;
 

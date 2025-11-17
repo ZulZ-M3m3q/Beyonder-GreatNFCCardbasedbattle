@@ -67,6 +67,22 @@
     <div id="battle-screen" class="screen">
       <div class="arcade-border">
         <h2 class="neon-text">BATTLE!</h2>
+        <div id="roulette-container" class="roulette-container hidden">
+          <div class="roulette-player">
+            <h3>Player 1</h3>
+            <div class="roulette-box">
+              <div id="roulette-number-1" class="roulette-number">1</div>
+            </div>
+            <button id="roulette-stop-1" class="roulette-stop-btn" onclick="stopRoulette(1)">STOP</button>
+          </div>
+          <div class="roulette-player">
+            <h3>Player 2</h3>
+            <div class="roulette-box">
+              <div id="roulette-number-2" class="roulette-number">1</div>
+            </div>
+            <button id="roulette-stop-2" class="roulette-stop-btn" onclick="stopRoulette(2)">STOP</button>
+          </div>
+        </div>
         <div class="battle-arena">
           <div class="fighter" id="fighter1">
             <div class="fighter-name"></div>
