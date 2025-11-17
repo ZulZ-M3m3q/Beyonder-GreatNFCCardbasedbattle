@@ -65,6 +65,27 @@ async function loadCharacterUpgrades() {
         console.log('Loaded character upgrades from JSON file');
       }
     }
+    
+    // Migrate old speedBonus to defenceBonus
+    let migrationOccurred = false;
+    for (const uuid in characterUpgrades) {
+      const data = characterUpgrades[uuid];
+      if (data.speedBonus !== undefined && data.defenceBonus === undefined) {
+        data.defenceBonus = Number(data.speedBonus) || 0; // Transfer old speedBonus value to defenceBonus
+        delete data.speedBonus; // Remove old property
+        migrationOccurred = true;
+        console.log(`Migrated ${uuid}: transferred speedBonus ${data.defenceBonus} to defenceBonus`);
+      }
+      // Ensure defenceBonus exists
+      if (data.defenceBonus === undefined) {
+        data.defenceBonus = 0;
+      }
+    }
+    // Save migrated data back to storage
+    if (migrationOccurred) {
+      saveCharacterUpgrades();
+      console.log('Migration complete - saved updated character data');
+    }
   } catch (e) {
     console.log('Error loading upgrades:', e);
     characterUpgrades = {};
@@ -417,6 +438,17 @@ function assignCharacter(playerNum, characterData) {
   }
   if (!characterUpgrades[sanitizedUuid].exp) {
     characterUpgrades[sanitizedUuid].exp = 0;
+  }
+  // Ensure defenceBonus exists (for legacy save data migration)
+  if (characterUpgrades[sanitizedUuid].defenceBonus === undefined) {
+    characterUpgrades[sanitizedUuid].defenceBonus = 0;
+  }
+  // Ensure all bonuses have defaults
+  if (characterUpgrades[sanitizedUuid].hpBonus === undefined) {
+    characterUpgrades[sanitizedUuid].hpBonus = 0;
+  }
+  if (characterUpgrades[sanitizedUuid].attackBonus === undefined) {
+    characterUpgrades[sanitizedUuid].attackBonus = 0;
   }
 
   const upgrades = characterUpgrades[sanitizedUuid];
@@ -874,6 +906,17 @@ function loadCharacterForUpgrade(characterData) {
   if (!characterUpgrades[sanitizedUuid].exp) {
     characterUpgrades[sanitizedUuid].exp = 0;
   }
+  // Ensure defenceBonus exists (for legacy save data migration)
+  if (characterUpgrades[sanitizedUuid].defenceBonus === undefined) {
+    characterUpgrades[sanitizedUuid].defenceBonus = 0;
+  }
+  // Ensure all bonuses have defaults
+  if (characterUpgrades[sanitizedUuid].hpBonus === undefined) {
+    characterUpgrades[sanitizedUuid].hpBonus = 0;
+  }
+  if (characterUpgrades[sanitizedUuid].attackBonus === undefined) {
+    characterUpgrades[sanitizedUuid].attackBonus = 0;
+  }
 
   currentUpgradeCharacter = {
     uuid: sanitizedUuid,
@@ -923,9 +966,9 @@ function showUpgradeMenu() {
   const stats = document.createElement('div');
   stats.className = 'upgrade-stats';
   stats.innerHTML = `
-    <div>HP Bonus: +${data.hpBonus * 100}</div>
-    <div>ATK Bonus: +${data.attackBonus * 100}</div>
-    <div>DEF Bonus: +${data.defenceBonus * 100}</div>
+    <div>HP Bonus: +${(data.hpBonus || 0) * 100}</div>
+    <div>ATK Bonus: +${(data.attackBonus || 0) * 100}</div>
+    <div>DEF Bonus: +${(data.defenceBonus || 0) * 100}</div>
   `;
 
   const controls = document.createElement('div');
