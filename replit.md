@@ -77,3 +77,17 @@ Preferred communication style: Simple, everyday language.
 - Web Storage API: For saving character unlocks, battle history, or high scores
 - Web Audio API: For retro sound effects and background music
 - Canvas API: For more advanced battle animations or particle effects
+
+## Deployment
+
+**Vercel Integration (November 17, 2025)**
+- Vercel configuration added for production deployment
+- `vercel.json` - Configuration file for Vercel deployment
+- `deploy.sh` - Automated deployment script using Vercel CLI
+- VERCEL_TOKEN stored in Replit Secrets for secure authentication
+- To deploy: Run `./deploy.sh` from the terminal
+
+**Deployment Files**
+- `.gitignore` - Excludes Vercel cache and build files from version control
+- Static site deployment - All HTML/CSS/JS files deployed as-is
+- No build step required (vanilla JavaScript project)
