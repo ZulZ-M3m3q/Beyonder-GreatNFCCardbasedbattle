@@ -763,6 +763,17 @@ body::before {
   font-weight: bold;
 }
 
+.upgrade-char-image {
+  text-align: center;
+  margin: 15px 0;
+}
+
+.upgrade-sprite {
+  font-size: 4rem;
+  margin: 15px 0;
+  filter: drop-shadow(0 0 10px #ff6600);
+}
+
 .upgrade-stats {
   background: rgba(255, 69, 0, 0.1);
   border: 2px solid #ff6600;
@@ -771,10 +782,41 @@ body::before {
   margin-bottom: 15px;
 }
 
-.upgrade-stats div {
-  margin: 8px 0;
-  color: #ffaa00;
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0;
   font-size: 1rem;
+  gap: 8px;
+}
+
+.stat-label {
+  color: #ffaa00;
+  font-weight: bold;
+  min-width: 50px;
+}
+
+.stat-origin {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.stat-arrow {
+  color: #ff6600;
+  font-size: 1.2rem;
+}
+
+.stat-current {
+  color: #00ff00;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.stat-bonus {
+  color: #ffaa00;
+  font-size: 0.85rem;
+  font-style: italic;
 }
 
 .upgrade-controls {

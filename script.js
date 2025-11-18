@@ -921,7 +921,14 @@ function loadCharacterForUpgrade(characterData) {
   currentUpgradeCharacter = {
     uuid: sanitizedUuid,
     name: String(characterData.name || 'UNKNOWN').substring(0, 50),
-    data: characterUpgrades[sanitizedUuid]
+    data: characterUpgrades[sanitizedUuid],
+    fullData: {
+      baseHp: parseInt(characterData.hp) || 100,
+      baseAttack: parseInt(characterData.attack) || 10,
+      baseDefence: parseInt(characterData.defence) || 10,
+      sprite: characterData.sprite || '⚔️',
+      imageURL: characterData.imageURL || null
+    }
   };
 
   const statusElement = document.getElementById('upgrade-scan-status');
@@ -943,13 +950,34 @@ function showUpgradeMenu() {
   const uuid = currentUpgradeCharacter.uuid;
   const data = currentUpgradeCharacter.data;
   const charName = currentUpgradeCharacter.name;
+  const charData = currentUpgradeCharacter.fullData;
 
-    const card = document.createElement('div');
+  const card = document.createElement('div');
   card.className = 'upgrade-card';
 
   const charNameDiv = document.createElement('div');
   charNameDiv.className = 'upgrade-char-name';
   charNameDiv.textContent = charName;
+
+  // Character Image
+  if (charData && charData.imageURL) {
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'upgrade-char-image';
+    const img = document.createElement('img');
+    img.src = charData.imageURL;
+    img.alt = charName;
+    img.className = 'character-image';
+    img.onerror = () => {
+      imageContainer.innerHTML = `<div class="upgrade-sprite">${charData.sprite || '⚔️'}</div>`;
+    };
+    imageContainer.appendChild(img);
+    card.appendChild(imageContainer);
+  } else if (charData && charData.sprite) {
+    const spriteDiv = document.createElement('div');
+    spriteDiv.className = 'upgrade-sprite';
+    spriteDiv.textContent = charData.sprite;
+    card.appendChild(spriteDiv);
+  }
 
   const points = document.createElement('div');
   points.className = 'upgrade-points';
@@ -959,16 +987,43 @@ function showUpgradeMenu() {
   levelInfo.className = 'upgrade-level';
   levelInfo.innerHTML = `
     <div>Level: ${data.level}</div>
-    <div>EXP: ${data.exp}</div>
+    <div>EXP: ${data.exp} / ${data.level * 100}</div>
   `;
 
+  // Calculate stats
+  const levelMultiplier = data.level;
+  const baseHp = charData ? charData.baseHp : 100;
+  const baseAttack = charData ? charData.baseAttack : 10;
+  const baseDefence = charData ? charData.baseDefence : 10;
+
+  const currentHp = (baseHp + (data.hpBonus * 100)) * levelMultiplier;
+  const currentAttack = (baseAttack + (data.attackBonus * 100)) * levelMultiplier;
+  const currentDefence = (baseDefence + (data.defenceBonus * 100)) * levelMultiplier;
 
   const stats = document.createElement('div');
   stats.className = 'upgrade-stats';
   stats.innerHTML = `
-    <div>HP Bonus: +${(data.hpBonus || 0) * 100}</div>
-    <div>ATK Bonus: +${(data.attackBonus || 0) * 100}</div>
-    <div>DEF Bonus: +${(data.defenceBonus || 0) * 100}</div>
+    <div class="stat-row">
+      <span class="stat-label">HP:</span>
+      <span class="stat-origin">${baseHp}</span>
+      <span class="stat-arrow">→</span>
+      <span class="stat-current">${currentHp}</span>
+      <span class="stat-bonus">(+${(data.hpBonus || 0) * 100})</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">ATK:</span>
+      <span class="stat-origin">${baseAttack}</span>
+      <span class="stat-arrow">→</span>
+      <span class="stat-current">${currentAttack}</span>
+      <span class="stat-bonus">(+${(data.attackBonus || 0) * 100})</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">DEF:</span>
+      <span class="stat-origin">${baseDefence}</span>
+      <span class="stat-arrow">→</span>
+      <span class="stat-current">${currentDefence}</span>
+      <span class="stat-bonus">(+${(data.defenceBonus || 0) * 100})</span>
+    </div>
   `;
 
   const controls = document.createElement('div');
