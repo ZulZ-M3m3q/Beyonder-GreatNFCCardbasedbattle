@@ -223,7 +223,8 @@ body::before {
 
 .title-logo {
   display: block;
-  max-width: pxpx  width: 35%;
+  max-width: 150px;
+  width: 30%;
   margin: 0 auto 20px;
   filter: drop-shadow(0 0 20px rgba(255, 69, 0, 0.8));
   animation: glow 3s infinite;
