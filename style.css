@@ -79,9 +79,22 @@ body::before {
 
 #game-container {
   position: relative;
-  width: 90%;
-  max-width: 900px;
+  width: 90vw;
+  max-width: 1600px;
+  aspect-ratio: 16 / 9;
   z-index: 1;
+}
+
+@media (max-width: 1920px) {
+  #game-container {
+    width: 85vw;
+  }
+}
+
+@media (max-width: 1366px) {
+  #game-container {
+    width: 90vw;
+  }
 }
 
 .screen {
@@ -106,7 +119,10 @@ body::before {
     0 0 20px rgba(255, 0, 0, 0.6),
     inset 0 0 20px rgba(255, 69, 0, 0.2);
   position: relative;
-  min-height: 500px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .arcade-border::before {
@@ -824,6 +840,15 @@ body::before {
 }
 
 @media (max-width: 768px) {
+  #game-container {
+    width: 95vw;
+    aspect-ratio: auto;
+  }
+
+  .arcade-border {
+    height: auto;
+  }
+
   .neon-text {
     font-size: 2.5rem;
   }
