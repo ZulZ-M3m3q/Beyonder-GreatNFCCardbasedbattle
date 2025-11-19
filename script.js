@@ -454,19 +454,23 @@ function assignCharacter(playerNum, characterData) {
   const upgrades = characterUpgrades[sanitizedUuid];
   const levelMultiplier = upgrades.level;
 
+  const hpBonus = Number(upgrades.hpBonus) || 0;
+  const attackBonus = Number(upgrades.attackBonus) || 0;
+  const defenceBonus = Number(upgrades.defenceBonus) || 0;
+
   const charData = {
     name: sanitizedName,
     baseHp: baseHp,
     baseAttack: baseAttack,
     baseDefence: baseDefence,
-    hp: (baseHp + (upgrades.hpBonus * 100)) * levelMultiplier,
-    attack: (baseAttack + (upgrades.attackBonus * 100)) * levelMultiplier,
-    defence: (baseDefence + (upgrades.defenceBonus * 100)) * levelMultiplier,
+    hp: Math.floor((baseHp + (hpBonus * 100)) * levelMultiplier),
+    attack: Math.floor((baseAttack + (attackBonus * 100)) * levelMultiplier),
+    defence: Math.floor((baseDefence + (defenceBonus * 100)) * levelMultiplier),
     sprite: sprite,
     imageURL: imageURL,
     uuid: sanitizedUuid,
-    maxHp: (baseHp + (upgrades.hpBonus * 100)) * levelMultiplier,
-    currentHp: (baseHp + (upgrades.hpBonus * 100)) * levelMultiplier
+    maxHp: Math.floor((baseHp + (hpBonus * 100)) * levelMultiplier),
+    currentHp: Math.floor((baseHp + (hpBonus * 100)) * levelMultiplier)
   };
 
   if (playerNum === 1) {
@@ -680,15 +684,19 @@ function executeTurn(attacker, multiplier) {
   attackerFighter.classList.add('attacking');
   setTimeout(() => attackerFighter.classList.remove('attacking'), 500);
 
+  // Get the actual attack and defence stats from the character objects
+  const actualAttack = Number(attackerChar.attack) || 10;
+  const actualDefence = Number(defenderChar.defence) || 10;
+
   // Calculate damage: Attack value reduced by defence percentage
   const blockChance = 0.25;
   const isBlocking = Math.random() < blockChance;
 
   // Defence reduces damage by a percentage (defence / (defence + 100))
   // This ensures defence always matters but attack can still do damage
-  const defenceReduction = defenderChar.defence / (defenderChar.defence + 100);
-  let baseDamage = Math.max(5, Math.floor(attackerChar.attack * (1 - defenceReduction)));
-  let damage = baseDamage * multiplier;
+  const defenceReduction = actualDefence / (actualDefence + 100);
+  let baseDamage = Math.max(5, Math.floor(actualAttack * (1 - defenceReduction)));
+  let damage = Math.floor(baseDamage * multiplier);
 
   if (isBlocking) {
     damage = Math.floor(damage * 0.5); // Block reduces damage to 50%
@@ -705,7 +713,7 @@ function executeTurn(attacker, multiplier) {
   defenderStatus.style.color = isBlocking ? '#ffaa00' : '#ff4500';
   setTimeout(() => defenderStatus.textContent = '', 1000);
 
-  let logMessage = `${attackerChar.name} attacks ${defenderChar.name} for ${damage} damage! (ATK:${attackerChar.attack} vs DEF:${defenderChar.defence}, x${multiplier})`;
+  let logMessage = `${attackerChar.name} attacks ${defenderChar.name} for ${damage} damage! (ATK:${actualAttack} vs DEF:${actualDefence}, x${multiplier})`;
   let logClass = 'attack';
 
   if (isBlocking) {
