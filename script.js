@@ -680,15 +680,18 @@ function executeTurn(attacker, multiplier) {
   attackerFighter.classList.add('attacking');
   setTimeout(() => attackerFighter.classList.remove('attacking'), 500);
 
-  // Calculate damage: (Attack - Defence) * Roulette Multiplier (minimum 1 damage)
+  // Calculate damage: Attack value reduced by defence percentage
   const blockChance = 0.25;
   const isBlocking = Math.random() < blockChance;
 
-  let baseDamage = Math.max(1, Math.floor(attackerChar.attack - defenderChar.defence));
+  // Defence reduces damage by a percentage (defence / (defence + 100))
+  // This ensures defence always matters but attack can still do damage
+  const defenceReduction = defenderChar.defence / (defenderChar.defence + 100);
+  let baseDamage = Math.max(5, Math.floor(attackerChar.attack * (1 - defenceReduction)));
   let damage = baseDamage * multiplier;
 
   if (isBlocking) {
-    damage = Math.floor(damage * 0.25); // Block reduces damage to 25%
+    damage = Math.floor(damage * 0.5); // Block reduces damage to 50%
     damage = Math.max(1, damage); // Ensure at least 1 damage even when blocked
     defenderFighter.classList.add('blocking');
     setTimeout(() => defenderFighter.classList.remove('blocking'), 500);
@@ -702,11 +705,11 @@ function executeTurn(attacker, multiplier) {
   defenderStatus.style.color = isBlocking ? '#ffaa00' : '#ff4500';
   setTimeout(() => defenderStatus.textContent = '', 1000);
 
-  let logMessage = `${attackerChar.name} attacks ${defenderChar.name} for ${damage} damage! (${baseDamage} x ${multiplier})`;
+  let logMessage = `${attackerChar.name} attacks ${defenderChar.name} for ${damage} damage! (ATK:${attackerChar.attack} vs DEF:${defenderChar.defence}, x${multiplier})`;
   let logClass = 'attack';
 
   if (isBlocking) {
-    logMessage += ` (BLOCKED! Reduced damage)`;
+    logMessage += ` (BLOCKED! 50% damage reduction)`;
     logClass = 'block';
   }
 
