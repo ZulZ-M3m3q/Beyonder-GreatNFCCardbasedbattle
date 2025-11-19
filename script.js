@@ -688,15 +688,12 @@ function executeTurn(attacker, multiplier) {
   const actualAttack = Number(attackerChar.attack) || 10;
   const actualDefence = Number(defenderChar.defence) || 10;
 
-  // Calculate damage: Attack value reduced by defence percentage
+  // Calculate damage: ATK × multiplier
   const blockChance = 0.25;
   const isBlocking = Math.random() < blockChance;
 
-  // Defence reduces damage by a percentage (defence / (defence + 100))
-  // This ensures defence always matters but attack can still do damage
-  const defenceReduction = actualDefence / (actualDefence + 100);
-  let baseDamage = Math.max(5, Math.floor(actualAttack * (1 - defenceReduction)));
-  let damage = Math.floor(baseDamage * multiplier);
+  // Use real stats: Attack × multiplier
+  let damage = Math.floor(actualAttack * multiplier);
 
   if (isBlocking) {
     damage = Math.floor(damage * 0.5); // Block reduces damage to 50%
