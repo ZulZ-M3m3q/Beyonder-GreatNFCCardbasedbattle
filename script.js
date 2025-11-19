@@ -585,10 +585,10 @@ function executeRouletteTurn() {
 
   if (value1 > value2) {
     addLog(`${player1Character.name} attacks! (${value1} > ${value2})`, 'attack');
-    executeTurn(1);
+    executeTurn(1, value1);
   } else if (value2 > value1) {
     addLog(`${player2Character.name} attacks! (${value2} > ${value1})`, 'attack');
-    executeTurn(2);
+    executeTurn(2, value2);
   } else {
     addLog('TIE! No one attacks this turn!', 'block');
   }
@@ -668,7 +668,7 @@ function updateLevelDisplay(num, character) {
   `;
 }
 
-function executeTurn(attacker) {
+function executeTurn(attacker, multiplier) {
   const defender = attacker === 1 ? 2 : 1;
 
   const attackerChar = attacker === 1 ? player1Character : player2Character;
@@ -680,11 +680,12 @@ function executeTurn(attacker) {
   attackerFighter.classList.add('attacking');
   setTimeout(() => attackerFighter.classList.remove('attacking'), 500);
 
-  // Calculate damage: Attack - Defence (minimum 1 damage)
+  // Calculate damage: (Attack - Defence) * Roulette Multiplier (minimum 1 damage)
   const blockChance = 0.25;
   const isBlocking = Math.random() < blockChance;
 
-  let damage = Math.max(1, Math.floor(attackerChar.attack - defenderChar.defence));
+  let baseDamage = Math.max(1, Math.floor(attackerChar.attack - defenderChar.defence));
+  let damage = baseDamage * multiplier;
 
   if (isBlocking) {
     damage = Math.floor(damage * 0.25); // Block reduces damage to 25%
@@ -701,7 +702,7 @@ function executeTurn(attacker) {
   defenderStatus.style.color = isBlocking ? '#ffaa00' : '#ff4500';
   setTimeout(() => defenderStatus.textContent = '', 1000);
 
-  let logMessage = `${attackerChar.name} attacks ${defenderChar.name} for ${damage} damage!`;
+  let logMessage = `${attackerChar.name} attacks ${defenderChar.name} for ${damage} damage! (${baseDamage} x ${multiplier})`;
   let logClass = 'attack';
 
   if (isBlocking) {
