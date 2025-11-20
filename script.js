@@ -657,6 +657,13 @@ function executeRouletteTurn() {
 }
 
 function showFighterSelection(winnerPlayer, multiplier) {
+  if (gameMode === 'solo' && winnerPlayer === 2) {
+    setTimeout(() => {
+      computerMakeAttack(multiplier);
+    }, 1000);
+    return;
+  }
+  
   const actionSelection = document.getElementById('action-selection');
   const attackerSelection = document.getElementById('attacker-selection');
   const targetSelection = document.getElementById('target-selection');
@@ -681,6 +688,39 @@ function showFighterSelection(winnerPlayer, multiplier) {
       attackerButtons.appendChild(btn);
     }
   });
+}
+
+function computerMakeAttack(multiplier) {
+  const availableAttackers = [];
+  player2Fighters.forEach((fighter, index) => {
+    if (fighter && fighter.currentHp > 0) {
+      availableAttackers.push(index + 1);
+    }
+  });
+  
+  const availableTargets = [];
+  player1Fighters.forEach((fighter, index) => {
+    if (fighter && fighter.currentHp > 0) {
+      availableTargets.push(index + 1);
+    }
+  });
+  
+  if (availableAttackers.length === 0 || availableTargets.length === 0) {
+    checkBattleEnd();
+    return;
+  }
+  
+  const attackerSlot = availableAttackers[Math.floor(Math.random() * availableAttackers.length)];
+  const targetSlot = availableTargets[Math.floor(Math.random() * availableTargets.length)];
+  
+  const attackerId = `2-${attackerSlot}`;
+  const targetId = `1-${targetSlot}`;
+  
+  addLog('Computer is choosing its action...', 'multiplier');
+  
+  setTimeout(() => {
+    executeTurn(attackerId, targetId, multiplier);
+  }, 800);
 }
 
 function selectAttacker(player, slot) {
