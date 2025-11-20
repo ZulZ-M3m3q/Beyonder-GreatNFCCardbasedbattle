@@ -653,6 +653,9 @@ function selectAttacker(player, slot) {
   const attackerSelection = document.getElementById('attacker-selection');
   const targetSelection = document.getElementById('target-selection');
   const targetButtons = document.getElementById('target-buttons');
+  const attackerButtons = document.getElementById('attacker-buttons');
+  
+  attackerButtons.querySelectorAll('button').forEach(btn => btn.disabled = true);
   
   attackerSelection.classList.add('hidden');
   targetSelection.classList.remove('hidden');
@@ -672,11 +675,13 @@ function selectAttacker(player, slot) {
 }
 
 function selectTarget(targetId) {
-  // Hide action selection immediately to prevent spam
   const actionSelection = document.getElementById('action-selection');
+  const targetButtons = document.getElementById('target-buttons');
+  
+  targetButtons.querySelectorAll('button').forEach(btn => btn.disabled = true);
+  
   actionSelection.classList.add('hidden');
   
-  // Execute turn and the action bar will stay hidden until next roulette win
   executeTurn(pendingAttacker, targetId, pendingMultiplier);
 }
 
