@@ -20,9 +20,25 @@ document.getElementById('start-btn').addEventListener('click', async () => {
     muteBtn.textContent = '🔊';
     isMuted = false;
   }
+  showScreen('mode-select');
+});
+
+document.getElementById('solo-mode-btn').addEventListener('click', async () => {
+  gameMode = 'solo';
   await checkNFCSupport();
   showScreen('nfc');
   updateNFCReaderUI();
+});
+
+document.getElementById('two-player-mode-btn').addEventListener('click', async () => {
+  gameMode = 'two-player';
+  await checkNFCSupport();
+  showScreen('nfc');
+  updateNFCReaderUI();
+});
+
+document.getElementById('back-to-title-from-mode').addEventListener('click', () => {
+  showScreen('title');
 });
 
 
@@ -45,9 +61,11 @@ let characterUpgrades = {};
 let playerPoints = { 1: 0, 2: 0 };
 let pendingAttacker = null;
 let pendingMultiplier = null;
+let gameMode = 'two-player';
 
 const screens = {
   title: document.getElementById('title-screen'),
+  'mode-select': document.getElementById('mode-select-screen'),
   nfc: document.getElementById('nfc-screen'),
   battle: document.getElementById('battle-screen'),
   upgrade: document.getElementById('upgrade-screen'),
@@ -156,6 +174,15 @@ function updateNFCReaderUI() {
       }
     }
   });
+  
+  const player2Header = document.querySelector('.player-nfc:nth-child(2) h3');
+  if (player2Header) {
+    if (gameMode === 'solo') {
+      player2Header.textContent = 'Computer (Scan Cards)';
+    } else {
+      player2Header.textContent = 'Player 2';
+    }
+  }
 }
 
 document.getElementById('nfc1-1').addEventListener('click', () => initiateNFCScan('1-1'));
