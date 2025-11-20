@@ -31,9 +31,10 @@ Preferred communication style: Simple, everyday language.
 - Characters are defined with properties: name, HP, attack, defence, sprite (emoji), imageURL, uuid, maxHP, and currentHP
 - Six pre-defined character types provide variety in gameplay (Warrior, Mage, Knight, Rogue, Paladin, Ninja)
 - Each character has unique base stats balancing HP, attack power, and defensive capabilities
-- Defence stat reduces incoming damage (damage = attack - defence, minimum 1)
+- Damage calculation uses real attack stats from NFC cards (November 20, 2025)
 - NFC card scanning (or simulated scanning) loads character data with persistent upgrades
-- The structure supports turn-based battle calculations with HP tracking and damage mitigation
+- Each player can scan up to 2 cards per battle (November 20, 2025)
+- The structure supports multi-fighter team battles with tactical fighter selection
 
 **Animation and Visual Effects**
 - CSS animations create the arcade aesthetic (neon text effects, scanlines, fade-ins)
@@ -43,17 +44,22 @@ Preferred communication style: Simple, everyday language.
 
 ### Game Logic Architecture
 
-**Roulette-Based Battle System (November 17, 2025)**
+**Multi-Fighter Battle System (November 20, 2025)**
+- Each player can bring up to 2 fighters to battle (minimum 1 required)
 - Battles use a roulette mechanic where players press STOP buttons to lock in random numbers (1-5)
-- Higher number attacks each turn; ties result in no attacks
-- Damage calculation: Attack - Defence (minimum 1 damage to prevent stalemates)
-- 25% chance for defender to block, reducing damage to 25% of original
-- Battle continues until one character's HP reaches 0
-- Winner gains experience points for leveling up
-- Replaced original automated battle system for more player engagement
+- When a player wins the roulette:
+  - They choose which of their fighters attacks (if they have 2)
+  - They choose which opponent fighter to target (if opponent has 2)
+- Fighter selection UI appears with clickable buttons showing fighter names and current HP
+- Damage calculation: ATK × multiplier (no defense reduction, uses real stats from cards)
+- 25% chance for defender to block, reducing damage to 50% of original
+- Battle continues until all fighters on one side are defeated
+- All fighters on winning team gain 50 EXP, losing team gains 25 EXP
+- Replaced single-fighter system for more strategic team-based gameplay (November 17, 2025 → November 20, 2025)
 
 **State Management**
-- Global variables (`player1Character`, `player2Character`, `battleInterval`) track game state
+- Global variables (`player1Fighters`, `player2Fighters`, `battleInterval`, `pendingAttacker`, `pendingMultiplier`) track game state
+- Fighter arrays store up to 2 fighters per player
 - No formal state management library; state is managed imperatively
 - Screen visibility serves as the primary state indicator
 - Pros: Straightforward implementation for small scope
@@ -61,7 +67,9 @@ Preferred communication style: Simple, everyday language.
 
 **Event-Driven Interactions**
 - Click event listeners handle all user interactions (start game, scan cards, start battle)
-- The "Start Battle" button is disabled until both players have scanned characters
+- NFC scanning screen now supports 4 scanners (2 per player): slots 1-1, 1-2, 2-1, 2-2
+- The "Start Battle" button is disabled until both players have scanned at least 1 fighter
+- Fighter selection during battle uses dynamically generated buttons based on available fighters
 - Simulated NFC scanning is instant click-based selection with random character assignment
 
 **Upgrade and Progression System (November 17, 2025)**
