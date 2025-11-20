@@ -35,14 +35,16 @@ const characters = [
   { name: 'NINJA', hp: 85, attack: 19, defence: 6, sprite: '🥷', imageURL: null, uuid: 'default-ninja' }
 ];
 
-let player1Character = null;
-let player2Character = null;
+let player1Fighters = [null, null];
+let player2Fighters = [null, null];
 let battleInterval = null;
 let nfcSupported = false;
-let nfcReaders = { 1: null, 2: null };
-let nfcAbortControllers = { 1: null, 2: null };
+let nfcReaders = { '1-1': null, '1-2': null, '2-1': null, '2-2': null };
+let nfcAbortControllers = { '1-1': null, '1-2': null, '2-1': null, '2-2': null };
 let characterUpgrades = {};
 let playerPoints = { 1: 0, 2: 0 };
+let pendingAttacker = null;
+let pendingMultiplier = null;
 
 const screens = {
   title: document.getElementById('title-screen'),
@@ -140,25 +142,26 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 
 function updateNFCReaderUI() {
-  const nfc1 = document.getElementById('nfc1');
-  const nfc2 = document.getElementById('nfc2');
-
-  if (nfcSupported) {
-    nfc1.querySelector('p').textContent = 'Tap NFC Card or Click';
-    nfc2.querySelector('p').textContent = 'Tap NFC Card or Click';
-  } else {
-    nfc1.querySelector('p').textContent = 'Click to Scan Card';
-    nfc2.querySelector('p').textContent = 'Click to Scan Card';
-  }
+  const scanners = ['1-1', '1-2', '2-1', '2-2'];
+  scanners.forEach(id => {
+    const nfcElement = document.getElementById(`nfc${id}`);
+    if (nfcElement) {
+      const p = nfcElement.querySelector('p');
+      if (p && nfcSupported) {
+        if (id.endsWith('-1')) {
+          p.textContent = 'Fighter 1';
+        } else {
+          p.textContent = 'Fighter 2 (Optional)';
+        }
+      }
+    }
+  });
 }
 
-document.getElementById('nfc1').addEventListener('click', () => {
-  initiateNFCScan(1);
-});
-
-document.getElementById('nfc2').addEventListener('click', () => {
-  initiateNFCScan(2);
-});
+document.getElementById('nfc1-1').addEventListener('click', () => initiateNFCScan('1-1'));
+document.getElementById('nfc1-2').addEventListener('click', () => initiateNFCScan('1-2'));
+document.getElementById('nfc2-1').addEventListener('click', () => initiateNFCScan('2-1'));
+document.getElementById('nfc2-2').addEventListener('click', () => initiateNFCScan('2-2'));
 
 async function initiateNFCScan(playerNum) {
   const nfcReader = document.getElementById(`nfc${playerNum}`);
@@ -245,7 +248,9 @@ async function initiateNFCScan(playerNum) {
       }, { once: true });
 
       setTimeout(() => {
-        if (playerNum === 1 ? !player1Character : !player2Character) {
+        const [player, slot] = playerNum.split('-').map(Number);
+        const fighters = player === 1 ? player1Fighters : player2Fighters;
+        if (!fighters[slot - 1]) {
           console.log('NFC timeout');
           const nfcReader = document.getElementById(`nfc${playerNum}`);
           nfcReader.innerHTML = `
@@ -364,12 +369,13 @@ function parseNFCData(text) {
   return null;
 }
 
-function assignCharacter(playerNum, characterData) {
+function assignCharacter(slotId, characterData) {
+  const [player, slot] = slotId.split('-').map(Number);
   const sanitizedUuid = String(characterData.uuid || '').substring(0, 100);
 
   // Validate that this is a Beyonder card
   if (!sanitizedUuid || !sanitizedUuid.includes('beyonder')) {
-    const nfcReader = document.getElementById(`nfc${playerNum}`);
+    const nfcReader = document.getElementById(`nfc${slotId}`);
     nfcReader.classList.remove('scanned');
     nfcReader.innerHTML = '';
 
@@ -392,7 +398,7 @@ function assignCharacter(playerNum, characterData) {
     nfcReader.appendChild(scanText);
     nfcReader.appendChild(errorText);
 
-    console.log(`Card rejected for Player ${playerNum}: Not a Beyonder card (UUID: ${sanitizedUuid})`);
+    console.log(`Card rejected for slot ${slotId}: Not a Beyonder card (UUID: ${sanitizedUuid})`);
 
     // Reset the reader after 3 seconds
     setTimeout(() => {
@@ -401,7 +407,7 @@ function assignCharacter(playerNum, characterData) {
       resetIcon.className = 'scan-icon';
       resetIcon.textContent = '📡';
       const resetText = document.createElement('p');
-      resetText.textContent = nfcSupported ? 'Tap NFC Card or Click' : 'Click to Scan Card';
+      resetText.textContent = slot === 1 ? 'Fighter 1' : 'Fighter 2 (Optional)';
       nfcReader.appendChild(resetIcon);
       nfcReader.appendChild(resetText);
     }, 3000);
@@ -473,13 +479,13 @@ function assignCharacter(playerNum, characterData) {
     currentHp: Math.floor((baseHp + (hpBonus * 100)) * levelMultiplier)
   };
 
-  if (playerNum === 1) {
-    player1Character = charData;
+  if (player === 1) {
+    player1Fighters[slot - 1] = charData;
   } else {
-    player2Character = charData;
+    player2Fighters[slot - 1] = charData;
   }
 
-  const nfcReader = document.getElementById(`nfc${playerNum}`);
+  const nfcReader = document.getElementById(`nfc${slotId}`);
   nfcReader.classList.add('scanned');
   nfcReader.innerHTML = '';
 
@@ -493,7 +499,7 @@ function assignCharacter(playerNum, characterData) {
   nfcReader.appendChild(scanIcon);
   nfcReader.appendChild(scanText);
 
-  const charInfo = document.getElementById(`char${playerNum}-info`);
+  const charInfo = document.getElementById(`char${slotId}-info`);
   charInfo.innerHTML = '';
 
   const charNameDiv = document.createElement('div');
@@ -507,7 +513,7 @@ function assignCharacter(playerNum, characterData) {
   charInfo.appendChild(charNameDiv);
   charInfo.appendChild(charStatsDiv);
 
-  if (player1Character && player2Character) {
+  if (player1Fighters[0] && player2Fighters[0]) {
     document.getElementById('battle-start-btn').disabled = false;
   }
 }
@@ -522,13 +528,28 @@ let rouletteValues = { 1: 1, 2: 1 };
 let rouletteStopped = { 1: false, 2: false };
 
 function initBattle() {
-  setupFighter(1, player1Character);
-  setupFighter(2, player2Character);
+  if (player1Fighters[0]) {
+    setupFighter('1-1', player1Fighters[0]);
+    document.getElementById('fighter1-1').style.display = 'flex';
+  }
+  if (player1Fighters[1]) {
+    setupFighter('1-2', player1Fighters[1]);
+    document.getElementById('fighter1-2').style.display = 'flex';
+  }
+  if (player2Fighters[0]) {
+    setupFighter('2-1', player2Fighters[0]);
+    document.getElementById('fighter2-1').style.display = 'flex';
+  }
+  if (player2Fighters[1]) {
+    setupFighter('2-2', player2Fighters[1]);
+    document.getElementById('fighter2-2').style.display = 'flex';
+  }
 
   const battleLog = document.getElementById('battle-log');
   battleLog.innerHTML = '<div class="log-entry">FIGHT!</div>';
 
   document.getElementById('game-over').classList.add('hidden');
+  document.getElementById('action-selection').classList.add('hidden');
 
   addLog('Press STOP to lock your number!', 'multiplier');
 
@@ -588,27 +609,86 @@ function executeRouletteTurn() {
   document.getElementById('roulette-stop-2').disabled = false;
 
   if (value1 > value2) {
-    addLog(`${player1Character.name} attacks! (${value1} > ${value2})`, 'attack');
-    executeTurn(1, value1);
+    addLog(`Player 1 wins! Choose your action! (${value1} > ${value2})`, 'attack');
+    showFighterSelection(1, value1);
   } else if (value2 > value1) {
-    addLog(`${player2Character.name} attacks! (${value2} > ${value1})`, 'attack');
-    executeTurn(2, value2);
+    addLog(`Player 2 wins! Choose your action! (${value2} > ${value1})`, 'attack');
+    showFighterSelection(2, value2);
   } else {
     addLog('TIE! No one attacks this turn!', 'block');
+    checkBattleEnd();
   }
+}
 
-  if (player1Character.currentHp <= 0 || player2Character.currentHp <= 0) {
+function showFighterSelection(winnerPlayer, multiplier) {
+  const actionSelection = document.getElementById('action-selection');
+  const attackerSelection = document.getElementById('attacker-selection');
+  const targetSelection = document.getElementById('target-selection');
+  const attackerButtons = document.getElementById('attacker-buttons');
+  
+  pendingMultiplier = multiplier;
+  
+  actionSelection.classList.remove('hidden');
+  attackerSelection.classList.remove('hidden');
+  targetSelection.classList.add('hidden');
+  attackerButtons.innerHTML = '';
+  
+  const fighters = winnerPlayer === 1 ? player1Fighters : player2Fighters;
+  
+  fighters.forEach((fighter, index) => {
+    if (fighter && fighter.currentHp > 0) {
+      const btn = document.createElement('button');
+      btn.textContent = `${fighter.name} (HP: ${fighter.currentHp})`;
+      btn.onclick = () => selectAttacker(winnerPlayer, index + 1);
+      attackerButtons.appendChild(btn);
+    }
+  });
+}
+
+function selectAttacker(player, slot) {
+  pendingAttacker = `${player}-${slot}`;
+  
+  const attackerSelection = document.getElementById('attacker-selection');
+  const targetSelection = document.getElementById('target-selection');
+  const targetButtons = document.getElementById('target-buttons');
+  
+  attackerSelection.classList.add('hidden');
+  targetSelection.classList.remove('hidden');
+  targetButtons.innerHTML = '';
+  
+  const opponentPlayer = player === 1 ? 2 : 1;
+  const opponentFighters = opponentPlayer === 1 ? player1Fighters : player2Fighters;
+  
+  opponentFighters.forEach((fighter, index) => {
+    if (fighter && fighter.currentHp > 0) {
+      const btn = document.createElement('button');
+      btn.textContent = `${fighter.name} (HP: ${fighter.currentHp})`;
+      btn.onclick = () => selectTarget(`${opponentPlayer}-${index + 1}`);
+      targetButtons.appendChild(btn);
+    }
+  });
+}
+
+function selectTarget(targetId) {
+  document.getElementById('action-selection').classList.add('hidden');
+  executeTurn(pendingAttacker, targetId, pendingMultiplier);
+}
+
+function checkBattleEnd() {
+  const player1Alive = player1Fighters.some(f => f && f.currentHp > 0);
+  const player2Alive = player2Fighters.some(f => f && f.currentHp > 0);
+  
+  if (!player1Alive || !player2Alive) {
     endBattle();
   } else {
-    // Start next roulette turn after delay
     setTimeout(() => {
       startRouletteTurn();
     }, 2000);
   }
 }
 
-function setupFighter(num, character) {
-  const fighter = document.getElementById(`fighter${num}`);
+function setupFighter(fighterId, character) {
+  const fighter = document.getElementById(`fighter${fighterId}`);
   fighter.querySelector('.fighter-name').textContent = character.name;
 
   const spriteElement = fighter.querySelector('.fighter-sprite');
@@ -627,12 +707,12 @@ function setupFighter(num, character) {
     spriteElement.textContent = character.sprite;
   }
 
-  updateHealth(num, character);
-  updateLevelDisplay(num, character);
+  updateHealth(fighterId, character);
+  updateLevelDisplay(fighterId, character);
 }
 
-function updateHealth(num, character) {
-  const fighter = document.getElementById(`fighter${num}`);
+function updateHealth(fighterId, character) {
+  const fighter = document.getElementById(`fighter${fighterId}`);
   const healthFill = fighter.querySelector('.health-fill');
   const healthText = fighter.querySelector('.health-text');
 
@@ -646,10 +726,14 @@ function updateHealth(num, character) {
   } else if (healthPercent <= 50) {
     healthFill.classList.add('low');
   }
+
+  if (character.currentHp <= 0) {
+    fighter.classList.add('defeated');
+  }
 }
 
-function updateLevelDisplay(num, character) {
-  const fighter = document.getElementById(`fighter${num}`);
+function updateLevelDisplay(fighterId, character) {
+  const fighter = document.getElementById(`fighter${fighterId}`);
   let levelDisplay = fighter.querySelector('.level-display');
 
   if (!levelDisplay) {
@@ -672,21 +756,25 @@ function updateLevelDisplay(num, character) {
   `;
 }
 
-function executeTurn(attacker, multiplier) {
-  const defender = attacker === 1 ? 2 : 1;
+function executeTurn(attackerId, targetId, multiplier) {
+  const [attackerPlayer, attackerSlot] = attackerId.split('-').map(Number);
+  const [targetPlayer, targetSlot] = targetId.split('-').map(Number);
 
-  const attackerChar = attacker === 1 ? player1Character : player2Character;
-  const defenderChar = defender === 1 ? player1Character : player2Character;
+  const attackerFighters = attackerPlayer === 1 ? player1Fighters : player2Fighters;
+  const targetFighters = targetPlayer === 1 ? player1Fighters : player2Fighters;
 
-  const attackerFighter = document.getElementById(`fighter${attacker}`);
-  const defenderFighter = document.getElementById(`fighter${defender}`);
+  const attackerChar = attackerFighters[attackerSlot - 1];
+  const targetChar = targetFighters[targetSlot - 1];
+
+  const attackerFighter = document.getElementById(`fighter${attackerId}`);
+  const targetFighter = document.getElementById(`fighter${targetId}`);
 
   attackerFighter.classList.add('attacking');
   setTimeout(() => attackerFighter.classList.remove('attacking'), 500);
 
   // Get the actual attack and defence stats from the character objects
   const actualAttack = Number(attackerChar.attack) || 10;
-  const actualDefence = Number(defenderChar.defence) || 10;
+  const actualDefence = Number(targetChar.defence) || 10;
 
   // Calculate damage: ATK × multiplier
   const blockChance = 0.25;
@@ -698,19 +786,19 @@ function executeTurn(attacker, multiplier) {
   if (isBlocking) {
     damage = Math.floor(damage * 0.5); // Block reduces damage to 50%
     damage = Math.max(1, damage); // Ensure at least 1 damage even when blocked
-    defenderFighter.classList.add('blocking');
-    setTimeout(() => defenderFighter.classList.remove('blocking'), 500);
+    targetFighter.classList.add('blocking');
+    setTimeout(() => targetFighter.classList.remove('blocking'), 500);
   }
 
-  defenderChar.currentHp = Math.max(0, defenderChar.currentHp - damage);
-  updateHealth(defender, defenderChar);
+  targetChar.currentHp = Math.max(0, targetChar.currentHp - damage);
+  updateHealth(targetId, targetChar);
 
-  const defenderStatus = defenderFighter.querySelector('.fighter-status');
-  defenderStatus.textContent = `-${damage} HP`;
-  defenderStatus.style.color = isBlocking ? '#ffaa00' : '#ff4500';
-  setTimeout(() => defenderStatus.textContent = '', 1000);
+  const targetStatus = targetFighter.querySelector('.fighter-status');
+  targetStatus.textContent = `-${damage} HP`;
+  targetStatus.style.color = isBlocking ? '#ffaa00' : '#ff4500';
+  setTimeout(() => targetStatus.textContent = '', 1000);
 
-  let logMessage = `${attackerChar.name} attacks ${defenderChar.name} for ${damage} damage! (ATK:${actualAttack} vs DEF:${actualDefence}, x${multiplier})`;
+  let logMessage = `${attackerChar.name} attacks ${targetChar.name} for ${damage} damage! (ATK:${actualAttack} vs DEF:${actualDefence}, x${multiplier})`;
   let logClass = 'attack';
 
   if (isBlocking) {
@@ -719,6 +807,9 @@ function executeTurn(attacker, multiplier) {
   }
 
   addLog(logMessage, logClass);
+  
+  // Check battle end after turn
+  checkBattleEnd();
 }
 
 function addLog(message, className = '') {
@@ -735,76 +826,63 @@ function endBattle() {
   clearInterval(rouletteIntervals[1]);
   clearInterval(rouletteIntervals[2]);
   document.getElementById('roulette-container').classList.add('hidden');
+  document.getElementById('action-selection').classList.add('hidden');
 
-  let winner, loser, winnerNum, loserNum;
+  const player1Alive = player1Fighters.some(f => f && f.currentHp > 0);
+  const player2Alive = player2Fighters.some(f => f && f.currentHp > 0);
 
-  if (player1Character.currentHp > player2Character.currentHp) {
-    winner = player1Character;
-    loser = player2Character;
-    winnerNum = 1;
-    loserNum = 2;
-  } else {
-    winner = player2Character;
-    loser = player1Character;
-    winnerNum = 2;
-    loserNum = 1;
-  }
+  const winnerTeam = player1Alive ? 1 : 2;
+  const loserTeam = player1Alive ? 2 : 1;
+  const winnerFighters = player1Alive ? player1Fighters : player2Fighters;
+  const loserFighters = player1Alive ? player2Fighters : player1Fighters;
 
-  const winnerUpgrades = characterUpgrades[winner.uuid];
-  const loserUpgrades = characterUpgrades[loser.uuid];
+  // Award experience to all fighters
+  const expAward = 50;
+  
+  winnerFighters.forEach((fighter, index) => {
+    if (fighter) {
+      const upgrades = characterUpgrades[fighter.uuid];
+      upgrades.exp += expAward;
+      upgrades.points += 10;
+      
+      // Level up logic
+      let requiredExp = upgrades.level * 100;
+      while (upgrades.exp >= requiredExp) {
+        upgrades.exp -= requiredExp;
+        upgrades.level++;
+        requiredExp = upgrades.level * 100;
+      }
+      
+      addLog(`${fighter.name} gained ${expAward} EXP! (Level ${upgrades.level})`, 'multiplier');
+    }
+  });
 
-  // Award Experience
-  const expAward = winner.currentHp === winner.maxHp ? 25 : 50; // 25 for win, 50 for perfect win
-  winnerUpgrades.exp += expAward;
-  loserUpgrades.exp += Math.floor(expAward / 2); // Lose half exp for losing
-
-  // Leveling Logic
-  let requiredExp = 100;
-  while (winnerUpgrades.exp >= requiredExp) {
-    winnerUpgrades.exp -= requiredExp;
-    winnerUpgrades.level++;
-    requiredExp += 100; // Each level requires 100 more exp
-  }
-
-  requiredExp = 100; // Reset for loser leveling check if needed (though usually they don't level up from losing)
-  while (loserUpgrades.exp >= requiredExp) {
-    loserUpgrades.exp -= requiredExp;
-    loserUpgrades.level++;
-    requiredExp += 100;
-  }
-
-  // Update character stats based on new level
-  const updateCharacterStats = (character, upgrades) => {
-    const levelMultiplier = upgrades.level;
-    character.hp = (character.baseHp + (upgrades.hpBonus * 100)) * levelMultiplier;
-    character.attack = (character.baseAttack + (upgrades.attackBonus * 100)) * levelMultiplier;
-    character.defence = (character.baseDefence + (upgrades.defenceBonus * 100)) * levelMultiplier;
-    character.maxHp = character.hp;
-    character.currentHp = character.hp; // Full heal on level up
-  };
-
-  updateCharacterStats(winner, winnerUpgrades);
-  updateCharacterStats(loser, loserUpgrades);
-
-  // Update points (if needed, you might want to adjust this logic)
-  winnerUpgrades.points += 10;
-  loserUpgrades.points += 5;
-  playerPoints[winnerNum] = winnerUpgrades.points;
-  playerPoints[loserNum] = loserUpgrades.points;
+  loserFighters.forEach((fighter, index) => {
+    if (fighter) {
+      const upgrades = characterUpgrades[fighter.uuid];
+      const loserExp = Math.floor(expAward / 2);
+      upgrades.exp += loserExp;
+      upgrades.points += 5;
+      
+      // Level up logic
+      let requiredExp = upgrades.level * 100;
+      while (upgrades.exp >= requiredExp) {
+        upgrades.exp -= requiredExp;
+        upgrades.level++;
+        requiredExp = upgrades.level * 100;
+      }
+      
+      addLog(`${fighter.name} gained ${loserExp} EXP! (Level ${upgrades.level})`, 'block');
+    }
+  });
 
   saveCharacterUpgrades();
 
-  // Update level displays
-  updateLevelDisplay(winnerNum, winner);
-  updateLevelDisplay(loserNum, loser);
-
-  addLog(`${winner.name} WINS!`, 'multiplier');
-  addLog(`${winner.name} gained ${expAward} EXP! (Level ${winnerUpgrades.level})`, 'multiplier');
-  addLog(`${loser.name} gained ${Math.floor(expAward / 2)} EXP! (Level ${loserUpgrades.level})`, 'block');
+  addLog(`Player ${winnerTeam} WINS!`, 'multiplier');
 
   const gameOver = document.getElementById('game-over');
   gameOver.classList.remove('hidden');
-  gameOver.querySelector('.winner-text').textContent = `${winner.name} WINS!`;
+  gameOver.querySelector('.winner-text').textContent = `PLAYER ${winnerTeam} WINS!`;
 }
 
 document.getElementById('restart-btn').addEventListener('click', () => {

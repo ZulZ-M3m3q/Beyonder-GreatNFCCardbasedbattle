@@ -597,6 +597,91 @@ body::before {
   100% { transform: rotate(360deg); }
 }
 
+.fighter-slots {
+  display: flex;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.fighter-slot {
+  flex: 1;
+}
+
+.team {
+  flex: 1;
+  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.team-label {
+  text-align: center;
+  color: #ffaa00;
+  font-size: 1.3rem;
+  text-shadow: 0 0 10px #ff8800;
+  margin: 0;
+}
+
+.fighter.defeated {
+  opacity: 0.3;
+  filter: grayscale(100%);
+}
+
+.action-selection {
+  background: rgba(255, 69, 0, 0.2);
+  border: 3px solid #ff4500;
+  border-radius: 15px;
+  padding: 25px;
+  margin: 30px 0;
+  text-align: center;
+}
+
+.action-selection h3 {
+  color: #ffaa00;
+  font-size: 1.5rem;
+  text-shadow: 0 0 10px #ff8800;
+  margin-bottom: 20px;
+}
+
+.selection-box {
+  margin: 20px 0;
+}
+
+.selection-box p {
+  color: #ff8800;
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  text-shadow: 0 0 5px #ff6600;
+}
+
+.selection-box button {
+  margin: 10px;
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  background: linear-gradient(45deg, #ff4500, #ff8800);
+  color: #fff;
+  border: 3px solid #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(255, 69, 0, 0.6);
+  transition: all 0.3s;
+  text-shadow: 0 0 5px #000;
+}
+
+.selection-box button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 25px rgba(255, 136, 0, 0.9);
+}
+
+.selection-box button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: scale(1);
+}
+
 .battle-log {
   background: rgba(0, 0, 0, 0.8);
   border: 2px solid #ff6600;

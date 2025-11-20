@@ -42,22 +42,45 @@
     <div id="nfc-screen" class="screen">
       <div class="arcade-border">
         <h2 class="neon-text">SCAN CHARACTER CARDS</h2>
+        <div class="subtitle" style="margin-bottom: 20px;">Each player can bring up to 2 fighters!</div>
         <div class="nfc-container">
           <div class="player-nfc">
             <h3>Player 1</h3>
-            <div id="nfc1" class="nfc-reader">
-              <div class="scan-icon">📡</div>
-              <p>Click to Scan Card</p>
+            <div class="fighter-slots">
+              <div class="fighter-slot">
+                <div id="nfc1-1" class="nfc-reader">
+                  <div class="scan-icon">📡</div>
+                  <p>Fighter 1</p>
+                </div>
+                <div id="char1-1-info" class="char-info"></div>
+              </div>
+              <div class="fighter-slot">
+                <div id="nfc1-2" class="nfc-reader">
+                  <div class="scan-icon">📡</div>
+                  <p>Fighter 2 (Optional)</p>
+                </div>
+                <div id="char1-2-info" class="char-info"></div>
+              </div>
             </div>
-            <div id="char1-info" class="char-info"></div>
           </div>
           <div class="player-nfc">
             <h3>Player 2</h3>
-            <div id="nfc2" class="nfc-reader">
-              <div class="scan-icon">📡</div>
-              <p>Click to Scan Card</p>
+            <div class="fighter-slots">
+              <div class="fighter-slot">
+                <div id="nfc2-1" class="nfc-reader">
+                  <div class="scan-icon">📡</div>
+                  <p>Fighter 1</p>
+                </div>
+                <div id="char2-1-info" class="char-info"></div>
+              </div>
+              <div class="fighter-slot">
+                <div id="nfc2-2" class="nfc-reader">
+                  <div class="scan-icon">📡</div>
+                  <p>Fighter 2 (Optional)</p>
+                </div>
+                <div id="char2-2-info" class="char-info"></div>
+              </div>
             </div>
-            <div id="char2-info" class="char-info"></div>
           </div>
         </div>
         <button id="battle-start-btn" class="arcade-btn" disabled>START BATTLE</button>
@@ -84,30 +107,70 @@
           </div>
         </div>
         <div class="battle-arena">
-          <div class="fighter" id="fighter1">
-            <div class="fighter-name"></div>
-            <div class="health-container">
-              <div class="health-bar">
-                <div class="health-fill"></div>
+          <div class="team" id="team1">
+            <h3 class="team-label">Player 1</h3>
+            <div class="fighter" id="fighter1-1">
+              <div class="fighter-name"></div>
+              <div class="health-container">
+                <div class="health-bar">
+                  <div class="health-fill"></div>
+                </div>
+                <div class="health-text"></div>
               </div>
-              <div class="health-text"></div>
+              <div class="fighter-sprite">🗡️</div>
+              <div class="fighter-status"></div>
             </div>
-            <div class="fighter-sprite">🗡️</div>
-            <div class="fighter-status"></div>
+            <div class="fighter" id="fighter1-2" style="display: none;">
+              <div class="fighter-name"></div>
+              <div class="health-container">
+                <div class="health-bar">
+                  <div class="health-fill"></div>
+                </div>
+                <div class="health-text"></div>
+              </div>
+              <div class="fighter-sprite">🗡️</div>
+              <div class="fighter-status"></div>
+            </div>
           </div>
 
           <div class="vs-text">VS</div>
 
-          <div class="fighter" id="fighter2">
-            <div class="fighter-name"></div>
-            <div class="health-container">
-              <div class="health-bar">
-                <div class="health-fill"></div>
+          <div class="team" id="team2">
+            <h3 class="team-label">Player 2</h3>
+            <div class="fighter" id="fighter2-1">
+              <div class="fighter-name"></div>
+              <div class="health-container">
+                <div class="health-bar">
+                  <div class="health-fill"></div>
+                </div>
+                <div class="health-text"></div>
               </div>
-              <div class="health-text"></div>
+              <div class="fighter-sprite">⚔️</div>
+              <div class="fighter-status"></div>
             </div>
-            <div class="fighter-sprite">⚔️</div>
-            <div class="fighter-status"></div>
+            <div class="fighter" id="fighter2-2" style="display: none;">
+              <div class="fighter-name"></div>
+              <div class="health-container">
+                <div class="health-bar">
+                  <div class="health-fill"></div>
+                </div>
+                <div class="health-text"></div>
+              </div>
+              <div class="fighter-sprite">⚔️</div>
+              <div class="fighter-status"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="action-selection" class="action-selection hidden">
+          <h3>Choose Your Action!</h3>
+          <div id="attacker-selection" class="selection-box">
+            <p>Select your attacker:</p>
+            <div id="attacker-buttons"></div>
+          </div>
+          <div id="target-selection" class="selection-box hidden">
+            <p>Select target:</p>
+            <div id="target-buttons"></div>
           </div>
         </div>
 
