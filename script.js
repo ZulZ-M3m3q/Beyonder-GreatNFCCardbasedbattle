@@ -638,7 +638,9 @@ function showFighterSelection(winnerPlayer, multiplier) {
   fighters.forEach((fighter, index) => {
     if (fighter && fighter.currentHp > 0) {
       const btn = document.createElement('button');
-      btn.textContent = `${fighter.name} (HP: ${fighter.currentHp})`;
+      const actualAttack = Number(fighter.attack) || 10;
+      const damage = Math.floor(actualAttack * multiplier);
+      btn.textContent = `${fighter.name} (DMG: ${damage})`;
       btn.onclick = () => selectAttacker(winnerPlayer, index + 1);
       attackerButtons.appendChild(btn);
     }
@@ -670,13 +672,20 @@ function selectAttacker(player, slot) {
 }
 
 function selectTarget(targetId) {
-  document.getElementById('action-selection').classList.add('hidden');
+  // Hide action selection immediately to prevent spam
+  const actionSelection = document.getElementById('action-selection');
+  actionSelection.classList.add('hidden');
+  
+  // Execute turn and the action bar will stay hidden until next roulette win
   executeTurn(pendingAttacker, targetId, pendingMultiplier);
 }
 
 function checkBattleEnd() {
   const player1Alive = player1Fighters.some(f => f && f.currentHp > 0);
   const player2Alive = player2Fighters.some(f => f && f.currentHp > 0);
+  
+  // Ensure action selection is hidden
+  document.getElementById('action-selection').classList.add('hidden');
   
   if (!player1Alive || !player2Alive) {
     endBattle();
