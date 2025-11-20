@@ -255,6 +255,42 @@ body::before {
   transform: scale(1);
 }
 
+.mode-buttons {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  margin: 50px 0;
+  flex-wrap: wrap;
+}
+
+.mode-btn {
+  flex: 1;
+  min-width: 300px;
+  max-width: 450px;
+  padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.mode-icon {
+  font-size: 4rem;
+  filter: drop-shadow(0 0 10px #ff6600);
+}
+
+.mode-title {
+  font-size: 1.8rem;
+  letter-spacing: 3px;
+}
+
+.mode-description {
+  font-size: 1rem;
+  color: #ffaa00;
+  font-weight: normal;
+  letter-spacing: 1px;
+}
+
 .credits {
   text-align: center;
   font-size: 1rem;
