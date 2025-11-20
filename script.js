@@ -605,6 +605,15 @@ function startRouletteTurn() {
       document.getElementById('roulette-number-2').textContent = rouletteValues[2];
     }
   }, 50);
+  
+  if (gameMode === 'solo') {
+    const computerDelay = Math.random() * 2000 + 1000;
+    setTimeout(() => {
+      if (!rouletteStopped[2]) {
+        stopRoulette(2);
+      }
+    }, computerDelay);
+  }
 }
 
 function stopRoulette(playerNum) {
