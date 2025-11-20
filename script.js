@@ -817,8 +817,14 @@ function executeTurn(attackerId, targetId, multiplier) {
 
   addLog(logMessage, logClass);
   
-  // Check battle end after turn
-  checkBattleEnd();
+  // Reset pending attacker data
+  pendingAttacker = null;
+  pendingMultiplier = null;
+  
+  // Check battle end after turn with a slight delay to allow animations to complete
+  setTimeout(() => {
+    checkBattleEnd();
+  }, 600);
 }
 
 function addLog(message, className = '') {
